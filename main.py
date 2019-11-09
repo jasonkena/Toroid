@@ -25,7 +25,7 @@ def superCube(n, rawGrid):
     """
     rawGrid = F.softmax(rawGrid, dim=0)
     rawGrid = torch.unsqueeze(rawGrid, dim=0)
-    rawGrid = rawGrid.expand(n**2, -1, -1)
+    rawGrid = rawGrid.expand(n ** 2, -1, -1)
     return rawGrid
 
 
