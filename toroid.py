@@ -1,76 +1,39 @@
 import numpy as np
 
 
-def twoToOneCoordinate(n, cell):
-    """Returns converted coordinates, from 2 dimensions to 1 dimension
-
-    :n: Size of toroidal grid with x and y components
-    :cell: Array with x and y componenets
-    :returns: Single integer representing coordinate
-
-    """
-    return cell[0] * n[0] + cell[1]
+def two_to_one_coordinate(size, cell):
+    return cell[0] * size[0] + cell[1]
 
 
-def oneToTwoCoordinate(n, coord):
-    """Returns converted coordinates, from 1 dimension to 2 dimensions
-
-    :n: Size of toroidal grid with x and y components
-    :coord: Single integer representing coordinates
-    :returns: Array representing coordinates
-
-    """
-    return np.array(np.divmod(coord, n[0]))
+def one_to_two_coordinate(size, coord):
+    return np.array(np.divmod(coord, size[0]))
 
 
-def toroidDistance2d(n, cellA, cellB):
-    """Returns squared Euclidean distance between 2 coordinates on a toroidal grid
-
-    :n: Size of toroidal grid with x and y components
-    :cellA: Array with x and y components
-    :cellB: Array with x and y components
-    :returns: Squared integer distance between 2 coordinates
-    """
-    wrapDist = np.absolute(n + np.minimum(cellA, cellB) -
-                           np.maximum(cellA, cellB))
-    noWrapDist = np.absolute(cellA - cellB)
-    minDist = np.power(np.minimum(wrapDist, noWrapDist), 2)
-    return np.sum(minDist)
+def toroid_distance2d(size, cellA, cellB):
+    wrap_dist = np.absolute(size + np.minimum(cellA, cellB) - np.maximum(cellA, cellB))
+    no_wrap_dist = np.absolute(cellA - cellB)
+    min_dist = np.power(np.minimum(wrap_dist, no_wrap_dist), 2)
+    return np.sum(min_dist)
 
 
-def toroidDistance1d(n, coordA, coordB):
-    """Wrapper around toroidDistance2d, to use 1d coordinates
-
-    :n: Size of toroidal grid with x and y components
-    :coordA: Coordinate A
-    :coordB: Coordinate B
-    :returns: Squared integer distance between 2 coordinates
-
-    """
-    return toroidDistance2d(
-        n, *[oneToTwoCoordinate(n, i) for i in [coordA, coordB]])
+def toroid_distance1d(size, coordA, coordB):
+    return toroid_distance2d(
+        size, *[one_to_two_coordinate(size, i) for i in [coordA, coordB]]
+    )
 
 
-def distanceGrid(n):
-    """Returns matrix of distances between any point
-
-    :n: Size of toroidal grid with x and y components
-    :returns: Matrix of distances
-
-    """
-    return np.array([[toroidDistance1d(n, i, j) for i in range(np.prod(n))]
-                     for j in range(np.prod(n))])
+def distance_grid(size):
+    return np.array(
+        [
+            [toroid_distance1d(size, i, j) for i in range(np.prod(size))]
+            for j in range(np.prod(size))
+        ]
+    )
 
 
-def distanceCube(n):
-    """TODO
-
-    :n: Size of toroidal grid with x and y components
-    :returns: TODO
-
-    """
-    grid = distanceGrid(n)
+def distance_cube(size):
+    grid = distance_grid(size)
     grid = np.expand_dims(grid, axis=2)
-    grid = np.repeat(grid, np.prod(n), axis=2)
+    grid = np.repeat(grid, np.prod(size), axis=2)
 
     return grid
