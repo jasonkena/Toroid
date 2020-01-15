@@ -17,7 +17,7 @@ def unparse(string, dictionary):
     array = np.array([array[i : i + 2] for i in range(0, len(array), 2)])
 
     # Array for the size, size is not Superpositioned yet
-    size = np.array([np.sqrt(array.shape[0])] * 2)
+    size = np.array([np.sqrt(array.shape[0])] * 2, dtype=np.int)
 
     # Parse 2d coordinates into 1d coordinates, in a single list
     array = np.array(
