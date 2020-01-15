@@ -12,7 +12,7 @@ def one_to_two_coordinate(size, coord):
 def toroid_distance2d(size, cellA, cellB):
     wrap_dist = np.absolute(size + np.minimum(cellA, cellB) - np.maximum(cellA, cellB))
     no_wrap_dist = np.absolute(cellA - cellB)
-    min_dist = np.power(np.minimum(wrap_dist, no_wrap_dist), 2)
+    min_dist = np.minimum(wrap_dist, no_wrap_dist) ** 2
     return np.sum(min_dist)
 
 
@@ -32,6 +32,7 @@ def distance_grid(size):
 
 
 def distance_cube(size):
+    # NOT SUPERCUBE
     grid = distance_grid(size)
     grid = np.expand_dims(grid, axis=2)
     grid = np.repeat(grid, np.prod(size), axis=2)

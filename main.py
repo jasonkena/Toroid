@@ -12,6 +12,15 @@ def distance_cube(size):
     return torch.from_numpy(toroid.distance_cube(size.numpy())).type(torch.FloatTensor)
 
 
+def distance_grid(size):
+    return torch.from_numpy(toroid.distance_grid(size.numpy())).type(torch.FloatTensor)
+
+
+def read(filename):
+    size, grid = parser.read(filename)
+    return torch.from_numpy(size), torch.from_numpy(size).astype(torch.FloatTensor)
+
+
 def super_cube(size, raw_grid):
     # raw_grid = F.softmax(raw_grid, dim=0)
     raw_grid = torch.unsqueeze(raw_grid, dim=0)
@@ -26,28 +35,27 @@ def default(size):
 def loss(size, raw_grid, distance_cube):
     value = super_cube(size, raw_grid) * distance_cube
     value = torch.sum(value, dim=1)
-    value = torch.triu(value)
+    # value = torch.triu(value)
     # COMMENTED
     # value = torch.sum(value)
     return value
 
 
 # PLEASE REFORMAT
-def hyperloss(size, raw_grid, distance_cube):
-    return torch.sum(
-        loss(size, raw_grid, distance_cube)
-        * loss(size, torch.eye(torch.prod(size)), distance_cube)
-    )
+# def hyperloss(size, raw_grid, distance_cube):
+# return torch.sum(
+# loss(size, raw_grid, distance_cube)
+# * loss(size, torch.eye(torch.prod(size)), distance_cube)
+# )
+
+# OPTIMIZE THIS
+def hyperloss(size, raw_grid, distance_grid, distance_cube):
+    value = loss(size, raw_grid, distance_cube) * distance_grid
+    value = torch.triu(value)
+    return value
 
 
 if __name__ == "__main__":
+    size, grid = read("sample")
+    print(hyperloss(size, grid, distance_grid(size), distance_cube(size)))
 
-    print(
-        hyperloss(
-            torch.tensor([5, 5]),
-            torch.from_numpy(
-                parser.unparse(open("sample").read(), parser.dictionary())
-            ).type(torch.FloatTensor),
-            distance_cube(torch.tensor([5, 5])),
-        )
-    )
