@@ -56,8 +56,10 @@ class Grid(nn.Module):
         # Size is a torch tensor, BEFORE HyperGrid
         super(Grid, self).__init__()
         # import pdb; pdb.set_trace()
+        self.new_size = (size ** 2).tolist()
+
         self.scaling_threshold = scaling_threshold
-        self.grid = torch.rand((size ** 2).tolist(), requires_grad=True, device=device)
+        self.grid = torch.rand(self.new_size, requires_grad=True, device=device)
         self.scale_a, self.scale_b = [
             torch.ones(torch.prod(size).tolist(), requires_grad=True, device=device)
             for _ in range(2)
@@ -69,7 +71,6 @@ class Grid(nn.Module):
         self.distance_grid = calculate_distance_grid(size).to(device)
         self.triu = torch.triu(torch.ones((size ** 2).tolist())).to(device)
 
-        self.new_size = (size ** 2).tolist()
         ops = (
             self.new_size,
             self.new_size,
@@ -84,31 +85,19 @@ class Grid(nn.Module):
         )
 
     def forward(self):
-        if torch.isnan(self.grid).any():
-            raise MyException("Broken")
-
-        # Calculate Scaling
-        nn.init.ones_(self.scale_a)
-        nn.init.ones_(self.scale_b)
-        scaling_loss = self.scaling_loss()
-        while scaling_loss > self.scaling_threshold:
-            self.scale_optim.zero_grad()
-            scaling_loss = self.scaling_loss()
-            scaling_loss.backward()
-            self.scale_optim.step()
-            print("Scaling Loss:", scaling_loss)
-            if torch.isnan(self.scale_a).any() or torch.isnan(self.scale_b).any():
-                raise MyException("Nan")
-        new_grid = torch.diag(self.scale_a) @ self.grid @ torch.diag(self.scale_b)
-        grid_loss = self.expr(new_grid, new_grid, backend="torch")
-        grid_loss.backward()
-        self.grid_optim.step()
+        try:
+            self.ras()
+            new_grid = self.scale_a @ self.grid @ self.scale_b
+            grid_loss = self.expr(new_grid, new_grid, backend="torch")
+            grid_loss.backward()
+            self.grid_optim.step()
+        except KeyboardInterrupt:
+            pass
         print("Grid Loss:", grid_loss)
-        return [scaling_loss, grid_loss]
+        return grid_loss
 
-    def scaling_loss(self):
-        grid = self.grid.detach()
-        resultant = torch.diag(self.scale_a) @ grid @ torch.diag(self.scale_b)
+    def scaling_loss(self, scale_a, scale_b):
+        resultant = scale_a @ self.grid @ scale_b
         row_sum = torch.sum(resultant, axis=0)
         row_column = torch.sum(resultant, axis=1)
 
@@ -116,20 +105,38 @@ class Grid(nn.Module):
         loss = torch.sum((row_sum - 1) ** 2 + (row_column - 1) ** 2)
         return loss
 
-    def implicit_scaling_loss(self):
-        row_sum = torch.sum(self.grid, axis=0)
-        row_column = torch.sum(self.grid, axis=1)
+    def ras(self, check_frequency=10):
+        grid = self.grid.detach()
+        scale_a, scale_b = [
+            torch.diag(torch.ones(self.new_size[0], device=device)) for _ in range(2)
+        ]
 
-        # This is not mean loss
-        loss = torch.sum((row_sum - 1) ** 2 + (row_column - 1) ** 2)
-        return loss
+        counter = 0
 
-    # def ras(self, max_iter=10, iteration=0):
-    # torch.div(self.grid, torch.sum(a, axis=0), out=self.grid)
-    # a = a / (np.sum(a, axis=1)[:, np.newaxis])
-    # # print(a)
-    # if iteration >= max_iter:
-    # print(a)
-    # return a
-    # return f(a, max_iter, iteration + 1)
+        while True:
+            if counter % check_frequency == 0:
+                scaling_loss = self.scaling_loss(scale_a, scale_b)
+                print("Scaling loss", scaling_loss)
+                if scaling_loss <= self.scaling_threshold:
+                    break
+            newscale_a = torch.diag(1 / torch.sum(grid, axis=1))
+            assert not torch.isnan(newscale_a).any()
+            grid = newscale_a @ grid
+            assert not torch.isnan(grid).any()
+            print(scale_a)
+            scale_a = newscale_a @ scale_a
+            assert not torch.isnan(scale_a).any()
+
+            newscale_b = torch.diag(1 / torch.sum(grid, axis=0))
+            grid = grid @ newscale_b
+            scale_b = scale_b @ newscale_b
+            counter = counter + 1
+
+        self.scale_a, self.scale_b = scale_a, scale_b
+        return scale_a, scale_b
+
+
+if __name__ == "__main__":
+    size = torch.tensor([10, 10])
+    grid = Grid(size)
 
