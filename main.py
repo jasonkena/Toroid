@@ -52,15 +52,15 @@ def calculate_distance_grid(size):
 
 
 class Grid(nn.Module):
-    def __init__(self, size, scaling_threshold=1):
+    def __init__(self, size):
         # Size is a torch tensor, BEFORE HyperGrid
         super(Grid, self).__init__()
         # import pdb; pdb.set_trace()
         self.new_size = (size ** 2).tolist()
 
-        self.scaling_threshold = scaling_threshold
+        # self.scaling_threshold = scaling_threshold
         self.grid = torch.rand(self.new_size, requires_grad=True, device=device)
-        self.grid_optim = optim.SGD([self.grid], lr=1, momentum=0.99)
+        self.grid_optim = optim.Adam([self.grid])
 
         eq = "ac,bd,cd,ab,ab->"
         self.distance_grid = calculate_distance_grid(size).to(device)
@@ -81,13 +81,15 @@ class Grid(nn.Module):
 
     def forward(self):
         try:
-            for _ in range(5):
+            for i in range(15, 1, -1):
                 self.grid_optim.zero_grad()
                 grid_loss = self.expr(self.grid, self.grid, backend="torch")
+                # print("Grid Loss:", grid_loss)
                 grid_loss.backward(retain_graph=True)
                 self.grid_optim.step()
-            self.ras()
-            self.grid = self.scale_a @ self.grid @ self.scale_b
+                self.ras(2 ** i)
+                self.grid = self.scale_a @ self.grid @ self.scale_b
+                print("Real Loss:", self.expr(self.grid, self.grid, backend="torch"))
         except KeyboardInterrupt:
             pass
         print("Grid Loss:", grid_loss)
@@ -102,7 +104,7 @@ class Grid(nn.Module):
         loss = torch.sum((row_sum - 1) ** 2 + (row_column - 1) ** 2)
         return loss
 
-    def ras(self, check_frequency=1):
+    def ras(self, scaling_threshold, check_frequency=1):
         grid = self.grid.detach()
         scale_a, scale_b = [
             torch.diag(torch.ones(self.new_size[0], device=device)) for _ in range(2)
@@ -114,13 +116,13 @@ class Grid(nn.Module):
             if counter % check_frequency == 0:
                 scaling_loss = self.scaling_loss(scale_a, scale_b)
                 print("Scaling loss", scaling_loss)
-                if scaling_loss <= self.scaling_threshold:
+                if scaling_loss <= scaling_threshold:
                     break
             newscale_a = torch.diag(1 / torch.sum(grid, axis=1))
             assert not torch.isnan(newscale_a).any()
             grid = newscale_a @ grid
             assert not torch.isnan(grid).any()
-            print(scale_a)
+            # print(scale_a)
             scale_a = newscale_a @ scale_a
             assert not torch.isnan(scale_a).any()
 
