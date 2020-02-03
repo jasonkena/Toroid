@@ -63,7 +63,7 @@ class Grid(nn.Module):
             for _ in range(2)
         ]
         self.scale_optim = optim.Adam([self.scale_a, self.scale_b], lr=1e-3)
-        self.grid_optim = optim.Adam([self.grid], lr=1e-5)
+        self.grid_optim = optim.SGD([self.grid], lr=3e-4)
 
         eq = "ac,bd,cd,ab,ab->"
         self.distance_grid = calculate_distance_grid(size).to(device)
@@ -88,29 +88,23 @@ class Grid(nn.Module):
             raise MyException("Broken")
 
         # Calculate Scaling
-        # nn.init.ones_(self.scale_a)
-        # nn.init.ones_(self.scale_b)
-        # scaling_loss = self.scaling_loss()
-        # while scaling_loss > self.scaling_threshold:
-        # self.scale_optim.zero_grad()
-        # scaling_loss = self.scaling_loss()
-        # scaling_loss.backward()
-        # self.scale_optim.step()
-        # print("Scaling Loss:", scaling_loss)
-        # if torch.isnan(self.scale_a).any() or torch.isnan(self.scale_b).any():
-        # raise MyException("Nan")
-        # new_grid = torch.diag(self.scale_a) @ self.grid @ torch.diag(self.scale_b)
-        new_grid = self.grid
-        scale_loss = self.implicit_scaling_loss()
+        nn.init.ones_(self.scale_a)
+        nn.init.ones_(self.scale_b)
+        scaling_loss = self.scaling_loss()
+        while scaling_loss > self.scaling_threshold:
+            self.scale_optim.zero_grad()
+            scaling_loss = self.scaling_loss()
+            scaling_loss.backward()
+            self.scale_optim.step()
+            print("Scaling Loss:", scaling_loss)
+            if torch.isnan(self.scale_a).any() or torch.isnan(self.scale_b).any():
+                raise MyException("Nan")
+        new_grid = torch.diag(self.scale_a) @ self.grid @ torch.diag(self.scale_b)
         grid_loss = self.expr(new_grid, new_grid, backend="torch")
-
-        total_loss = scale_loss + grid_loss
-        total_loss.backward()
-
+        grid_loss.backward()
         self.grid_optim.step()
         print("Grid Loss:", grid_loss)
-        # return [scaling_loss, grid_loss]
-        # return grid_loss
+        return [scaling_loss, grid_loss]
 
     def scaling_loss(self):
         grid = self.grid.detach()
