@@ -60,7 +60,8 @@ class Grid(nn.Module):
 
         # self.scaling_threshold = scaling_threshold
         self.grid = torch.rand(self.new_size, requires_grad=True, device=device)
-        self.grid_optim = optim.Adam([self.grid])
+        self.grid_optim = optim.Adam([self.grid], lr=3e-4)
+        # for 10x10 3e-3
 
         eq = "ac,bd,cd,ab,ab->"
         self.distance_grid = calculate_distance_grid(size).to(device)
@@ -81,14 +82,16 @@ class Grid(nn.Module):
 
     def forward(self):
         try:
-            for i in range(15, 1, -1):
+            for i in torch.arange(15, 1, -0.2):
                 self.grid_optim.zero_grad()
                 grid_loss = self.expr(self.grid, self.grid, backend="torch")
                 # print("Grid Loss:", grid_loss)
                 grid_loss.backward(retain_graph=True)
                 self.grid_optim.step()
+                self.grid.data = self.grid.clamp_min(0).data
                 self.ras(2 ** i)
-                self.grid = self.scale_a @ self.grid @ self.scale_b
+                # VERY IMPORTANT TO USE COPY. So reference isn't lost
+                self.grid.data = (self.scale_a @ self.grid @ self.scale_b).data
                 print("Real Loss:", self.expr(self.grid, self.grid, backend="torch"))
         except KeyboardInterrupt:
             pass
@@ -104,7 +107,8 @@ class Grid(nn.Module):
         loss = torch.sum((row_sum - 1) ** 2 + (row_column - 1) ** 2)
         return loss
 
-    def ras(self, scaling_threshold, check_frequency=1):
+    def ras(self, scaling_threshold, proportion=0.5, check_frequency=10):
+        # Where proportion is % of original
         grid = self.grid.detach()
         scale_a, scale_b = [
             torch.diag(torch.ones(self.new_size[0], device=device)) for _ in range(2)
@@ -131,11 +135,19 @@ class Grid(nn.Module):
             scale_b = scale_b @ newscale_b
             counter = counter + 1
 
+            # scale_a = (
+            # proportion * torch.eye(self.new_size[0], device=device)
+            # + (1 - proportion) * scale_a
+            # )
+            # scale_b = (
+            # proportion * torch.eye(self.new_size[0], device=device)
+            # + (1 - proportion) * scale_b
+            # )
         self.scale_a, self.scale_b = scale_a, scale_b
         return scale_a, scale_b
 
 
 if __name__ == "__main__":
-    size = torch.tensor([10, 10])
+    size = torch.tensor([14, 14])
     grid = Grid(size)
 
