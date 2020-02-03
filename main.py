@@ -11,6 +11,10 @@ torch.manual_seed(0)
 device = torch.device("cuda")
 
 
+class MyException(Exception):
+    pass
+
+
 def two_to_one_coordinate(size, cell):
     return cell[0] * size[0] + cell[1]
 
@@ -48,12 +52,19 @@ def calculate_distance_grid(size):
 
 
 class Grid(nn.Module):
-    def __init__(self, size):
+    def __init__(self, size, scaling_threshold=1):
+        # Size is a torch tensor, BEFORE HyperGrid
         super(Grid, self).__init__()
         # import pdb; pdb.set_trace()
-        self.grid = nn.Parameter(
-            torch.rand((size ** 2).tolist()).to(device), requires_grad=True
-        )
+        self.scaling_threshold = scaling_threshold
+        self.grid = torch.rand((size ** 2).tolist(), requires_grad=True, device=device)
+        self.scale_a, self.scale_b = [
+            torch.ones(torch.prod(size).tolist(), requires_grad=True, device=device)
+            for _ in range(2)
+        ]
+        self.scale_optim = optim.Adam([self.scale_a, self.scale_b], lr=1e-3)
+        self.grid_optim = optim.Adam([self.grid], lr=1e-5)
+
         eq = "ac,bd,cd,ab,ab->"
         self.distance_grid = calculate_distance_grid(size).to(device)
         self.triu = torch.triu(torch.ones((size ** 2).tolist())).to(device)
@@ -74,20 +85,57 @@ class Grid(nn.Module):
 
     def forward(self):
         if torch.isnan(self.grid).any():
-
-            class MyException(Exception):
-                pass
-
             raise MyException("Broken")
-        new_grid = softmax(self.grid)
-        return self.expr(new_grid, new_grid, backend="torch")
 
-    def ras(self, max_iter=10, iteration=0):
-        torch.div(self.grid, torch.sum(a, axis=0), out=self.grid)
-        a = a / (np.sum(a, axis=1)[:, np.newaxis])
-        # print(a)
-        if iteration >= max_iter:
-            print(a)
-            return a
-        return f(a, max_iter, iteration + 1)
+        # Calculate Scaling
+        # nn.init.ones_(self.scale_a)
+        # nn.init.ones_(self.scale_b)
+        # scaling_loss = self.scaling_loss()
+        # while scaling_loss > self.scaling_threshold:
+        # self.scale_optim.zero_grad()
+        # scaling_loss = self.scaling_loss()
+        # scaling_loss.backward()
+        # self.scale_optim.step()
+        # print("Scaling Loss:", scaling_loss)
+        # if torch.isnan(self.scale_a).any() or torch.isnan(self.scale_b).any():
+        # raise MyException("Nan")
+        # new_grid = torch.diag(self.scale_a) @ self.grid @ torch.diag(self.scale_b)
+        new_grid = self.grid
+        scale_loss = self.implicit_scaling_loss()
+        grid_loss = self.expr(new_grid, new_grid, backend="torch")
+
+        total_loss = scale_loss + grid_loss
+        total_loss.backward()
+
+        self.grid_optim.step()
+        print("Grid Loss:", grid_loss)
+        # return [scaling_loss, grid_loss]
+        # return grid_loss
+
+    def scaling_loss(self):
+        grid = self.grid.detach()
+        resultant = torch.diag(self.scale_a) @ grid @ torch.diag(self.scale_b)
+        row_sum = torch.sum(resultant, axis=0)
+        row_column = torch.sum(resultant, axis=1)
+
+        # This is not mean loss
+        loss = torch.sum((row_sum - 1) ** 2 + (row_column - 1) ** 2)
+        return loss
+
+    def implicit_scaling_loss(self):
+        row_sum = torch.sum(self.grid, axis=0)
+        row_column = torch.sum(self.grid, axis=1)
+
+        # This is not mean loss
+        loss = torch.sum((row_sum - 1) ** 2 + (row_column - 1) ** 2)
+        return loss
+
+    # def ras(self, max_iter=10, iteration=0):
+    # torch.div(self.grid, torch.sum(a, axis=0), out=self.grid)
+    # a = a / (np.sum(a, axis=1)[:, np.newaxis])
+    # # print(a)
+    # if iteration >= max_iter:
+    # print(a)
+    # return a
+    # return f(a, max_iter, iteration + 1)
 
