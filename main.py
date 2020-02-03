@@ -7,7 +7,7 @@ import opt_einsum as oe
 
 # from apex import amp
 print(torch.cuda.get_device_name(0))
-torch.manual_seed(0)
+# torch.manual_seed(0)
 device = torch.device("cuda")
 
 
@@ -60,12 +60,7 @@ class Grid(nn.Module):
 
         self.scaling_threshold = scaling_threshold
         self.grid = torch.rand(self.new_size, requires_grad=True, device=device)
-        self.scale_a, self.scale_b = [
-            torch.ones(torch.prod(size).tolist(), requires_grad=True, device=device)
-            for _ in range(2)
-        ]
-        self.scale_optim = optim.Adam([self.scale_a, self.scale_b], lr=1e-3)
-        self.grid_optim = optim.SGD([self.grid], lr=3e-4)
+        self.grid_optim = optim.SGD([self.grid], lr=1, momentum=0.99)
 
         eq = "ac,bd,cd,ab,ab->"
         self.distance_grid = calculate_distance_grid(size).to(device)
@@ -86,11 +81,13 @@ class Grid(nn.Module):
 
     def forward(self):
         try:
+            for _ in range(5):
+                self.grid_optim.zero_grad()
+                grid_loss = self.expr(self.grid, self.grid, backend="torch")
+                grid_loss.backward(retain_graph=True)
+                self.grid_optim.step()
             self.ras()
-            new_grid = self.scale_a @ self.grid @ self.scale_b
-            grid_loss = self.expr(new_grid, new_grid, backend="torch")
-            grid_loss.backward()
-            self.grid_optim.step()
+            self.grid = self.scale_a @ self.grid @ self.scale_b
         except KeyboardInterrupt:
             pass
         print("Grid Loss:", grid_loss)
@@ -105,7 +102,7 @@ class Grid(nn.Module):
         loss = torch.sum((row_sum - 1) ** 2 + (row_column - 1) ** 2)
         return loss
 
-    def ras(self, check_frequency=10):
+    def ras(self, check_frequency=1):
         grid = self.grid.detach()
         scale_a, scale_b = [
             torch.diag(torch.ones(self.new_size[0], device=device)) for _ in range(2)
