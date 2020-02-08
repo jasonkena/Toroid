@@ -20,7 +20,8 @@
 \node[square,draw=black,fill=\param] at (\x,-\y)[align=center] {\AlphAlph{#2}\AlphAlph{#3}\\ \AlphAlph{\y}\AlphAlph{\x}};}}
 }
 \providecommand{\toroidWarp}[1]{
-    \begin{tikzpicture}[scale=1]
+    \scalebox{0.8}{
+    \begin{tikzpicture}
         \toroid{#1}
         \foreach \x in {1,...,#1} {
             \node at (\x,0) {\AlphAlph{#1}\AlphAlph{\x}};
@@ -31,7 +32,7 @@
             \node at (#1+1,-\y) {\AlphAlph{\y}\AlphAlph{1}};
         }
     \end{tikzpicture}
-}
+}}
 
 \providecommand{\toroidAxes}[3]{
     \superToroid{#1}{#2}{#3}
@@ -44,6 +45,7 @@
 }
 
 \providecommand{\nestedToroid}[1]{
+    \scalebox{0.8}{
     \begin{tikzpicture}[scale=#1+1,square/.style={rectangle,inner sep=0pt,minimum size=1cm}]
         \begin{scope}[scale=1]
             \draw[shift={(-0.5,0.5)}] (1,-1) grid (#1+1,-#1-1);
@@ -62,32 +64,35 @@
             }
         \end{scope}
     \end{tikzpicture}
+    }
 }
 %a
-\providecommand{\twodcomparison}[1]{
+\NewDocumentCommand{\twodcomparison}{sm}{
+    \IfBooleanTF#1{\providecommand{\shading}{white}}{\providecommand{\shading}{gray}}
+    \scalebox{0.8}{
 \begin{tikzpicture}
-    \begin{scope}[scale=1,square/.style={rectangle,inner sep=0pt,minimum size=1cm}]
-        %\draw[shift={(-0.5,0.5)}] (0,0) grid ({(#1^2)},{-(#1^2)});
-        \foreach \x in {1,...,#1} {
-            \foreach \xa in {1,...,#1} {
-                \node at ({(\x-1)*#1+(\xa-1)},1) {\AlphAlph{\x}\AlphAlph{\xa}};
+    \begin{scope}[square/.style={rectangle,inner sep=0pt,minimum size=1cm}]
+        %\draw[shift={(-0.5,0.5)}] (0,0) grid ({(#2^2)},{-(#2^2)});
+        \foreach \x in {1,...,#2} {
+            \foreach \xa in {1,...,#2} {
+                \node at ({(\x-1)*#2+(\xa-1)},1) {\AlphAlph{\x}\AlphAlph{\xa}};
         }}
-        \foreach \y in {1,...,#1} {
-            \foreach \ya in {1,...,#1} {
-                \node at (-1,{-((\y-1)*#1+(\ya-1))}) {\AlphAlph{\y}\AlphAlph{\ya}};
+        \foreach \y in {1,...,#2} {
+            \foreach \ya in {1,...,#2} {
+                \node at (-1,{-((\y-1)*#2+(\ya-1))}) {\AlphAlph{\y}\AlphAlph{\ya}};
         }}
-        \foreach \xa in {1,...,#1} {
-            \foreach \ya in {1,...,#1} {
-            \foreach \xb in {1,...,#1} {
-                \foreach \yb in {1,...,#1} {
-                \pgfmathtruncatemacro{\xpos}{(\xa-1)*#1+(\ya-1)}
-                \pgfmathtruncatemacro{\ypos}{((\xb-1)*#1+(\yb-1))}
+        \foreach \xa in {1,...,#2} {
+            \foreach \ya in {1,...,#2} {
+            \foreach \xb in {1,...,#2} {
+                \foreach \yb in {1,...,#2} {
+                \pgfmathtruncatemacro{\xpos}{(\xa-1)*#2+(\ya-1)}
+                \pgfmathtruncatemacro{\ypos}{((\xb-1)*#2+(\yb-1))}
                 %\pgfmathtruncatemacro\xpos{}
                 %\pgfmathtruncatemacro\ypos{}
         \ifnum\xpos<\ypos
         \providecommand{\param}{white}
         \else
-        \providecommand{\param}{gray}
+        \providecommand{\param}{\shading}
         \fi
 \node[square,draw=black,fill=\param] at (\xpos,-\ypos)[align=center] {\AlphAlph{\xa}\AlphAlph{\ya}\\ \AlphAlph{\xb}\AlphAlph{\yb}};}}
             }
@@ -95,4 +100,4 @@
     \end{scope}
 
 \end{tikzpicture}
-}
+}}

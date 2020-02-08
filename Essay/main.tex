@@ -4,6 +4,8 @@
 \usepackage[utf8]{inputenc}
 \usepackage{microtype, listings, amsmath, amssymb, csquotes}
 \usepackage{tikz}
+\usepackage{subcaption}
+\usepackage{xparse}
 
 \usepackage{alphalph}
 \usepackage[hidelinks]{hyperref}
@@ -17,6 +19,7 @@
     urlcolor=cyan
 }
 
+\input{fig/figures}
 \title{Toroidal Grid Optimization via Gradient Descent}
 \author{Jason Ken A}
 
@@ -24,12 +27,7 @@
 \maketitle
 \tableofcontents
 
-\input{section/problem}
-\section{Superposition}%
-\label{sec:superposition}
-Since the entries into the toroidal grid are discrete (eg. $AA$ can only be in one position), it is not possible to optimize the loss function. Therefore, relaxing the constraints to enable superposition -- here defined as having a token being in multiple positions at once each with its own ``probabilities'' -- is essential.
+\include{section/problem}
+\include{section/super}
 
-A simple method of allowing superposition, is by allowing any position to have any token value
-
-%\toroidAxes{3}
 \end{document}
