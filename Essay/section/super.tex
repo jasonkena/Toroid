@@ -1,6 +1,37 @@
 
 \section{Superposition}%
 \label{sec:superposition}
-Since the entries into the toroidal grid are discrete (eg. $AA$ can only be in one position), it is not possible to optimize the loss function. Therefore, relaxing the constraints to enable superposition -- here defined as having a token being in multiple positions at once each with its own ``probabilities'' -- is essential.
+Since the entries into the toroidal grid are discrete (eg. $AA$ resolves to discrete coordinates within the grid), it is not possible to optimize the loss function. Therefore, relaxing the constraints to enable superposition -- here defined as having a token being in multiple positions at once each with its own ``probabilities'' -- is essential. In this essay, ``probability'' will not refer to the likeliness of a random event, but rather, the confidence of a token in its posiiton.
 
-A simple method of allowing superposition, is by allowing any position to have any token value
+A simple method of allowing superposition, is by allowing any position to have any token value, which again, can be visualized as a 4-dimensional matrix, and 2-dimensional matrix, as seen in \autoref{fig:superposition}. But this time, the elements of the grid do not represent the distances between tokens. But rather, they represent the probability of a token being placed in a certain position. Further constraints to limit the total probability to 1 will be discussed in a later section.
+\begin{figure}[htpb]
+    \centering
+    \begin{subfigure}[t]{0.5\textwidth}
+    \begin{center}
+    \nestedToroid*{2}
+    \end{center}
+    \caption{$A_{ijkl}$, a 4-dimensional superposition}
+    \end{subfigure}%
+    ~
+    \begin{subfigure}[t]{0.5\textwidth}
+    \begin{center}
+    \twodcomparison*{2}
+    \end{center}
+    \caption{$A_{ij,kl}$ a 2-dimensional superposition}
+    \end{subfigure}
+
+    \caption{Tensors $S$ representing superpositions of a $2\times 2$ toroidal grid, where every element $S_{ijkl}$ represents the probability of the token $KL$ being in the of position $IJ$ in the original grid}%
+    \label{fig:superposition}
+\end{figure}
+
+As an example,
+\drawGrid{3}{{AA,AB,AC,BA,BB,BC,CA,CB,CC}}
+\superposition{3}{AA,AB,AC,BA,BB,BC,CA,CB,CC}
+
+Defining the loss function for this formulation requires us to compare every single value, in every single position, to every single value in every single position. And we must do so, while taking both of their confidence's into account (ie. the distance metric should be scaled by their confidence). The distance should be scaled with
+\begin{equation}
+    S_{ab}S_{cd}
+\end{equation}
+
+The distance between these two probabilities is defined as
+$C_{a,c}$, only the indices $a$ and $c$ correspond to positions on the grid, whereas $b$ and $d$ correspond to only the token itself

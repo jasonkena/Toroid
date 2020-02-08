@@ -1,5 +1,6 @@
 %was node [circle,draw=black,inner sep=0pt,minimum size={width("AAA")}] {\AlphAlph{\x}\AlphAlph{\y}};}}
 % was [square,draw=black]
+\tikzset{square/.style={rectangle,inner sep=0pt,minimum size=1cm}}
 \providecommand{\toroid}[1]{
     \draw[shift={(-0.5,0.5)}] (1,-1) grid (#1+1,-#1-1);
         \foreach \x in {1,...,#1} {
@@ -18,7 +19,7 @@
         \else
         \providecommand{\param}{\shading}
         \fi
-\node[square,draw=black,fill=\param] at (\x,-\y)[align=center] {\AlphAlph{#3}\AlphAlph{#4}\\ \AlphAlph{\y}\AlphAlph{\x}};}}
+\node[square,draw=black,fill=\param] at (\x,-\y)[align=center] {\AlphAlph{#4}\AlphAlph{#3}\\ \AlphAlph{\y}\AlphAlph{\x}};}}
 }
 \providecommand{\toroidWarp}[1]{
     \scalebox{0.8}{
@@ -47,7 +48,7 @@
 
 \NewDocumentCommand{\nestedToroid}{sm}{
     \scalebox{0.8}{
-    \begin{tikzpicture}[scale=#2+1,square/.style={rectangle,inner sep=0pt,minimum size=1cm}]
+    \begin{tikzpicture}[scale=#2+1]
         \begin{scope}[scale=1]
             \draw[shift={(-0.5,0.5)}] (1,-1) grid (#2+1,-#2-1);
             \foreach \x in {1,...,#2} {
@@ -72,7 +73,6 @@
     \IfBooleanTF#1{\providecommand{\shading}{white}}{\providecommand{\shading}{gray}}
     \scalebox{0.8}{
 \begin{tikzpicture}
-    \begin{scope}[square/.style={rectangle,inner sep=0pt,minimum size=1cm}]
         %\draw[shift={(-0.5,0.5)}] (0,0) grid ({(#2^2)},{-(#2^2)});
         \foreach \x in {1,...,#2} {
             \foreach \xa in {1,...,#2} {
@@ -95,10 +95,47 @@
         \else
         \providecommand{\param}{\shading}
         \fi
-\node[square,draw=black,fill=\param] at (\xpos,-\ypos)[align=center] {\AlphAlph{\xa}\AlphAlph{\ya}\\ \AlphAlph{\xb}\AlphAlph{\yb}};}}
+\node[square,draw=black,fill=\param] at (\xpos,-\ypos)[align=center] {\AlphAlph{\xb}\AlphAlph{\yb}\\ \AlphAlph{\xa}\AlphAlph{\ya}};}}
             }
         }
-    \end{scope}
-
 \end{tikzpicture}
 }}
+
+\newcommand{\drawGrid}[2]{
+    %1 is the length of the raw toroid
+    %2 is the list
+    \begin{tikzpicture}
+    \foreach \token [count=\i from 0] in #2 {
+        \pgfmathtruncatemacro{\x}{mod(\i,#1)}
+        \pgfmathtruncatemacro{\y}{\i/#1}
+    \node[square,draw=black] at (\x,-\y) {\token};}
+    \end{tikzpicture}
+}
+\ExplSyntaxOn
+\NewDocumentCommand{\superposition}{mm}{
+    \scalebox{0.8}{
+\begin{tikzpicture}
+        %\draw[shift={(-0.5,0.5)}] (0,0) grid ({(#2^2)},{-(#2^2)});
+        \foreach \x in {1,...,#1} {
+            \foreach \xa in {1,...,#1} {
+                \node at ({(\x-1)*#1+(\xa-1)},1) {\AlphAlph{\x}\AlphAlph{\xa}};
+        }}
+        \foreach \y in {1,...,#1} {
+            \foreach \ya in {1,...,#1} {
+                \node at (-1,{-((\y-1)*#1+(\ya-1))}) {\AlphAlph{\y}\AlphAlph{\ya}};
+        }}
+        \foreach \xa in {1,...,#1} {
+            \foreach \ya in {1,...,#1} {
+            \foreach \xb in {1,...,#1} {
+                \foreach \yb in {1,...,#1} {
+                \pgfmathtruncatemacro{\xpos}{(\xa-1)*#1+(\ya-1)}
+                \pgfmathtruncatemacro{\ypos}{((\xb-1)*#1+(\yb-1))}
+            \str_if_eq:eeTF {\AlphAlph{\xb}\AlphAlph{\yb}} {\clist_item:nn {#2}{(\xa-1)*#1+\ya}}
+            {\providecommand{\param}{gray}}
+            {\providecommand{\param}{white}}
+\node[square,draw=black,fill=\param] at (\xpos,-\ypos)[align=center] {\AlphAlph{\xb}\AlphAlph{\yb}\\ \AlphAlph{\xa}\AlphAlph{\ya}};}}
+            }
+        }
+\end{tikzpicture}
+}}
+\ExplSyntaxOff
