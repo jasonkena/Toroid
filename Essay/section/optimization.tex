@@ -1,0 +1,35 @@
+\section{Optimization}%
+\label{sec:optimization}
+
+\subsection{Constraints}%
+\label{sub:constraints}
+To be able to properly model probability, the sum of the probabilities of each token in all of its positions must be equal to one. Similarly, the sum of the probabilities of each position, in all of its values must be equal to one. Therefore, the sums of each of the rows and each of the columns must be equal to one, this is called a Doubly Stochastic Matrix. To be able to enforce this constraint, the Sinkhorn-Knopp algorithm was developed.
+
+\subsubsection{Sinkhorn-Knopp Algorithm}%
+\label{ssub:sinkhorn_knopp_algorithm}
+
+Given $K$ an $n\times n$ non-negative matrix, by repetitively normalizing the rows and columns, a doubly stochastic matrix can be obtained. A single iteration can be seen through the following equation
+
+\begin{equation}
+        K'=\left(\sum^N_i K_{ij}\right)^{-1}K\left(\sum^N_j K_{ij}\right)^{-1}
+\end{equation}
+
+\subsubsection{Non-negative Matrices}%
+\label{ssub:non_negative_matrices}
+Since Sinkhorn-Knopp requires a non-negative matrix, and because negative probabilities make no sense, at every iteration of Sinkhorn-Knopp and Gradient Descent, the values have to be maintained above $0$.
+\begin{equation}
+        K'_{ij}=\max(K_{ij},0)
+\end{equation}
+
+\subsection{Gradient Descent}%
+\label{sub:gradient_descent}
+Gradient Descent is an algorithm to iteratively optimize a convex function, with knowledge of the derivative of the function with respect to all of the function parameters $\theta$. In the case of optimizing a loss function, steps must be taken in the direction opposite to the gradient, therefore, the equation is as follows
+\begin{equation}
+         \theta'=\theta-\alpha \frac{\delta}{\delta \theta}L(\theta)
+\end{equation}
+where $\alpha$ is a parameter determining how big of a change there is between iterations of gradient descent.
+
+\subsubsection{Derivative of Loss Function coming Soon}%
+\label{ssub:derivative_of_loss_function_coming_soon}
+
+

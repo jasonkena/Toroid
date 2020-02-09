@@ -125,9 +125,10 @@ But since removing the irregularly shaped duplicate entries will be a hassle, we
 \subsubsection{Loss Function as Matrix Multiplications}%
 \label{ssub:loss_function_as_matrix_multiplications}
 Let $\odot$ denote the element-wise matrix multiplication, and $O$ denotes the original grid. The loss function for toroidal grid $X$ is equal to
-\begin{equation}
-    L(x)=\sum C(X)\odot C(O)\odot U
-\end{equation}
+\begin{align*}
+    L(x)&=\sum_i^{N^2}\sum_j^{N^2}C(X)_{ij}C(O)_{ij}U_{ij}\\
+        &=\sum C(X)\odot C(O)\odot U
+\end{align*}
 where $C(X),C(O),U$ are matrices of the form $N^2\times N^2$, and $U_{ij}$ is defined with the piece-wise defined function:
 \begin{equation}
     U_{ij}=
