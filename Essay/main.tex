@@ -6,10 +6,16 @@
 \usepackage{tikz}
 \usepackage{subcaption}
 \usepackage{xparse}
+\usepackage{graphicx}
+\usepackage{bm}
+%\usepackage{subfig}
 
 \usepackage{alphalph}
 \usepackage[hidelinks]{hyperref}
 \usepackage{cleveref}
+
+\usepackage[style=numeric,sorting=none]{biblatex}
+\addbibresource{main.bib}
 
 \hypersetup{
     colorlinks=true,
@@ -19,12 +25,18 @@
     urlcolor=cyan
 }
 
+
+\newenvironment{psmallmatrix}
+  {\left(\begin{smallmatrix}}
+  {\end{smallmatrix}\right)}
+
 \input{fig/figures}
 \title{Toroidal Grid Optimization via Gradient Descent}
 \author{Jason Ken A}
 
 \begin{document}
 \maketitle
+\include{section/abstract}
 \tableofcontents
 
 \include{section/problem}
@@ -32,4 +44,5 @@
 \include{section/optimization}
 \include{section/evaluation}
 
+\printbibliography
 \end{document}

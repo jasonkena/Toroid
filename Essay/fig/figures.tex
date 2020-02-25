@@ -12,7 +12,7 @@
     \draw[shift={(-0.5,0.5)}] (1,-1) grid (#2+1,-#2-1);
         \foreach \x in {1,...,#2} {
             \foreach \y in {1,...,#2} {
-        \pgfmathtruncatemacro{\xpos}{(\x-1)*#2+(\y-1)}
+        \pgfmathtruncatemacro{\xpos}{(\y-1)*#2+(\x-1)}
         \pgfmathtruncatemacro{\ypos}{((#4-1)*#2+(#3-1))}
         \ifnum\xpos<\ypos
         \providecommand{\param}{white}

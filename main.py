@@ -148,6 +148,6 @@ class Grid(nn.Module):
 
 
 if __name__ == "__main__":
-    size = torch.tensor([14, 14])
+    size = torch.tensor([10, 10])
     grid = Grid(size)
 
