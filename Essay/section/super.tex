@@ -1,9 +1,7 @@
 
 \section{Superposition}%
 \label{sec:superposition}
-Since the entries into the toroidal grid are discrete (eg. $AA$ resolves to discrete coordinates within the grid), it is not possible to optimize the loss function. Therefore, relaxing the constraints to enable superposition -- here defined as having a token being in multiple positions at once each with its own ``probabilities'' -- is essential. In this essay, ``probability'' will not refer to the likeliness of a random event, but rather, the confidence of a token in its posiiton.
-
-A simple method of allowing superposition, is by allowing any position to have any token value, which again, can be visualized as a 4-dimensional matrix, and 2-dimensional matrix, as seen in \autoref{fig:superposition}. But this time, the elements of the grid do not represent the distances between tokens. But rather, they represent the probability of a token being placed in a certain position. Further constraints to limit the total probability to 1 will be discussed in a later section. Note that now the $y-$axis represents various positions (the same token in various places), and the $x-$axis represents the possible token values (all of which lie on the same toroid grid cell).
+Since the entries into the toroidal grid are discrete (ie. discrete matrix indices correspond to discrete coordinates within the grid), it is not yet possible to optimize the loss function. Therefore, relaxing the constraints to enable ``superposition'' --- here defined as having a token being in multiple positions, with each of its positions having its own ``probabilities'' --- is essential. In this essay, ``probability'' will not refer to the likeliness of a random event, but rather, the confidence of a token in its posiiton. Let $S$ denote the superposition grid.
 \begin{figure}[htpb]
     \centering
     \begin{subfigure}[t]{0.5\textwidth}
@@ -24,7 +22,8 @@ A simple method of allowing superposition, is by allowing any position to have a
     \label{fig:superposition}
 \end{figure}
 
-An example is shown in \autoref{fig:superpositionExample}
+A simple method of allowing superposition, is by allowing any token to be in any position, which again, can be visualized as a 4-dimensional matrix, and 2-dimensional matrix, as seen in \autoref{fig:superposition}, and again, to reduce complexity we choose the 2-dimensional model. But this time, in contrast to \autoref{fig:comparisonGrids}, the elements of the grid \emph{do not represent comparisons}, but rather, the element $S_{i,j,k,l}$ (in the case of a 4-dimensional superposition) or $S_{ij,kl}$ (in the case of a 2-dimensional superposition), represent the probability of the token $\bm{KL}$ inhabiting the position of the token $\bm{IJ}$ \emph{within the original grid $O$}. Further constraints to enforce the concept of probabilities will be discussed in \autoref{sub:constraints}. Note that now the rows represents various positions within the grid $O$, and the columns represents the possible token values. An example is shown in \autoref{fig:superpositionExample}.
+
 
 \begin{figure}[htpb]
     \centering
@@ -49,7 +48,7 @@ An example is shown in \autoref{fig:superpositionExample}
 \subsubsection{Generalization of the Loss Function}%
 \label{ssub:generalization_of_the_loss_function}
 
-Defining the loss function for this formulation requires us to compare every value, in every position, to every value in every position. And we must do so, while taking both of their confidence's into account (ie. the distance metric should be scaled by their confidence). Therefore, the distance should be scaled with
+Defining the loss function for this formulation requires us to compare \emph{every} value within \emph{every} position, to \emph{every other} value within \emph{every} position.\footnote{The wording is important} this is  And we must do so, while taking both of their confidence's into account (ie. the distance metric should be scaled by their confidence). Therefore, the distance should be scaled with
 \begin{equation}
     S_{ab}S_{cd}
 \end{equation}

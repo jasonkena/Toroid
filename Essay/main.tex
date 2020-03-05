@@ -13,6 +13,7 @@
 \usepackage{alphalph}
 \usepackage[hidelinks]{hyperref}
 \usepackage{cleveref}
+\usepackage[margin=1in]{geometry}
 
 \usepackage[style=numeric,sorting=none]{biblatex}
 \addbibresource{main.bib}
@@ -30,15 +31,17 @@
   {\left(\begin{smallmatrix}}
   {\end{smallmatrix}\right)}
 
+\newcommand{\wrt}{w.r.t.}
+
 \input{fig/figures}
 \title{Toroidal Grid Optimization via Gradient Descent}
 \author{Jason Ken A}
 
 \begin{document}
 \maketitle
-\include{section/abstract}
 \tableofcontents
 
+\include{section/introduction}
 \include{section/problem}
 \include{section/super}
 \include{section/optimization}
