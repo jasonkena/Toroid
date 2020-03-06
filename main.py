@@ -63,18 +63,15 @@ class Grid(nn.Module):
         self.grid_optim = optim.Adam([self.grid], lr=3e-4)
         # for 10x10 3e-3
 
-        eq = "ac,bd,cd,ab,ab->"
-        self.distance_grid = calculate_distance_grid(size).to(device)
-        self.triu = torch.triu(torch.ones((size ** 2).tolist())).to(device)
+        eq = "ac,bd,cd,ab->"
 
         ops = (
             self.new_size,
             self.new_size,
             self.distance_grid,
             self.distance_grid,
-            self.triu,
         )
-        constants = [2, 3, 4]
+        constants = [2, 3]
 
         self.expr = oe.contract_expression(
             eq, *ops, constants=constants, optimize="optimal"
@@ -88,14 +85,14 @@ class Grid(nn.Module):
                 # print("Grid Loss:", grid_loss)
                 grid_loss.backward(retain_graph=True)
                 self.grid_optim.step()
-                self.grid.data = self.grid.clamp_min(0).data
+                self.grid.data.abs_()
                 self.ras(2 ** i)
                 # VERY IMPORTANT TO USE COPY. So reference isn't lost
                 self.grid.data = (self.scale_a @ self.grid @ self.scale_b).data
                 print("Real Loss:", self.expr(self.grid, self.grid, backend="torch"))
         except KeyboardInterrupt:
             pass
-        print("Grid Loss:", grid_loss)
+        # print("Grid Loss:", grid_loss)
         return grid_loss
 
     def scaling_loss(self, scale_a, scale_b):
@@ -107,7 +104,7 @@ class Grid(nn.Module):
         loss = torch.sum((row_sum - 1) ** 2 + (row_column - 1) ** 2)
         return loss
 
-    def ras(self, scaling_threshold, proportion=0.5, check_frequency=10):
+    def ras(self, scaling_threshold, check_frequency=10):
         # Where proportion is % of original
         grid = self.grid.detach()
         scale_a, scale_b = [
@@ -119,7 +116,7 @@ class Grid(nn.Module):
         while True:
             if counter % check_frequency == 0:
                 scaling_loss = self.scaling_loss(scale_a, scale_b)
-                print("Scaling loss", scaling_loss)
+                # print("Scaling loss", scaling_loss)
                 if scaling_loss <= scaling_threshold:
                     break
             newscale_a = torch.diag(1 / torch.sum(grid, axis=1))
@@ -135,14 +132,6 @@ class Grid(nn.Module):
             scale_b = scale_b @ newscale_b
             counter = counter + 1
 
-            # scale_a = (
-            # proportion * torch.eye(self.new_size[0], device=device)
-            # + (1 - proportion) * scale_a
-            # )
-            # scale_b = (
-            # proportion * torch.eye(self.new_size[0], device=device)
-            # + (1 - proportion) * scale_b
-            # )
         self.scale_a, self.scale_b = scale_a, scale_b
         return scale_a, scale_b
 
