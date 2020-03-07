@@ -63,6 +63,7 @@ class Grid(nn.Module):
         self.grid_optim = optim.Adam([self.grid], lr=3e-4)
         # for 10x10 3e-3
 
+        self.distance_grid = calculate_distance_grid(size).to(device)
         eq = "ac,bd,cd,ab->"
 
         ops = (
