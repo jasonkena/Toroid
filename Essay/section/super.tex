@@ -1,29 +1,30 @@
 
 \section{Superposition}%
 \label{sec:superposition}
-Since the entries into the toroidal grid are discrete (ie. discrete matrix indices correspond to discrete coordinates within the grid), it is not yet possible to optimize the loss function. Therefore, relaxing the constraints to enable ``superposition'' --- here defined as having a token being in multiple positions, with each of its positions having its own ``probabilities'' --- is essential. In this essay, ``probability'' will not refer to the likeliness of a random event, but rather, the confidence of a token in its posiiton. Let $S$ denote the superposition grid.
+Since the entries into the toroidal grid are discrete (ie. discrete elements corresponding to discrete coordinates within the grid), it is not yet possible to optimize the loss function using gradients. Therefore, relaxing the constraints to enable ``superposition'' --- here defined as having a token being in multiple positions, with each of its positions having its own \emph{probability} --- is essential. In this essay, \emph{probability} will not refer to the likeliness of a random event, but rather, the confidence of a token in its position. Let $S$ denote a superposition grid.
 \begin{figure}[htpb]
     \centering
     \begin{subfigure}[t]{0.5\textwidth}
     \begin{center}
     \nestedToroid*{2}
     \end{center}
-    \caption{$A_{ijkl}$, a 4-dimensional superposition}
+    \caption{$S_{i,j,k,l}$, a 4-dimensional superposition}
     \end{subfigure}%
     ~
     \begin{subfigure}[t]{0.5\textwidth}
     \begin{center}
     \twodcomparison*{2}
     \end{center}
-    \caption{$A_{ij,kl}$ a 2-dimensional superposition}
+    \caption{$S_{m,n}$ a 2-dimensional superposition}
     \end{subfigure}
 
-    \caption{Tensors $S$ representing superpositions of a $2\times 2$ toroidal grid, where every element $S_{ijkl}$ represents the probability of the token $KL$ being in the of position $IJ$ in the original grid}%
+    \caption{Tensors $S$ representing superpositions of a $2\times 2$ toroidal grid, where every element represents the probability of the token $KL$ being in the of position $IJ$ in $O$}%
     \label{fig:superposition}
 \end{figure}
 
-A simple method of allowing superposition, is by allowing any token to be in any position, which again, can be visualized as a 4-dimensional matrix, and 2-dimensional matrix, as seen in \autoref{fig:superposition}, and again, to reduce complexity we choose the 2-dimensional model. But this time, in contrast to \autoref{fig:comparisonGrids}, the elements of the grid \emph{do not represent comparisons}, but rather, the element $S_{i,j,k,l}$ (in the case of a 4-dimensional superposition) or $S_{ij,kl}$ (in the case of a 2-dimensional superposition), represent the probability of the token $\bm{KL}$ inhabiting the position of the token $\bm{IJ}$ \emph{within the original grid $O$}. Further constraints to enforce the concept of probabilities will be discussed in \autoref{sub:constraints}. Note that now the rows represents various positions within the grid $O$, and the columns represents the possible token values. An example is shown in \autoref{fig:superpositionExample}.
+A simple method of allowing superposition, is by allowing any token to be in any position, which again, can be visualized as a 4-dimensional matrix, and 2-dimensional matrix, as seen in \autoref{fig:superposition}, and again, to reduce complexity we choose the 2-dimensional model. But this time, in contrast to \autoref{fig:comparisonGrids}, the elements of the grid \emph{do not represent comparisons}, but rather, the element $S_{i,j,k,l}$ (in the case of a 4-dimensional superposition) or $S_{m,n}$\footnote{Using the same conversion as in \ref{ssub:token_comparisons}} (in the case of a 2-dimensional superposition), represent the probability of the token $\bm{KL}$ inhabiting the position the original position (position in $O$) of token $\bm{IJ}$. Further constraints to enforce the concept of probabilities will be discussed in \ref{sub:constraints}. Note, rows represent various positions within the grid $O$, and that columns represent the possible token values. An example of superposition for a discrete grid is shown in \autoref{fig:superpositionExample}.
 
+By doing so, we are able to remove the limitations associated with a discrete grid. A single token value is now associated with all of the possible token positions, each with a different confidence. So now, the position of a token is fluid, determined by the confidences, we can now differentiate the loss function with respect to the confidences. \emph{Instead of optimizing $X$, we optimize its continuous representation, $S$.}
 
 \begin{figure}[htpb]
     \centering
@@ -31,14 +32,15 @@ A simple method of allowing superposition, is by allowing any token to be in any
     \begin{center}
 \drawGrid{2}{{BB,AB,BA,AA}}
     \end{center}
-    \caption{$A_{ijkl}$, an example toroidal grid}
+    \caption{$X$, an example toroidal grid}
     \end{subfigure}%
     ~
     \begin{subfigure}[t]{0.5\textwidth}
     \begin{center}
 \superposition{2}{BB,AB,BA,AA}
     \end{center}
-    \caption{$A_{ij,kl}$ superposition of the grid on the left}
+    \caption{$S_{m,n}$ superposition of the grid on the left}
+    \label{fig:superpositionShade}
     \end{subfigure}
 
     \caption{Shaded cells represent cells with probability 1, the rest have probability 0}
@@ -48,36 +50,39 @@ A simple method of allowing superposition, is by allowing any token to be in any
 \subsubsection{Generalization of the Loss Function}%
 \label{ssub:generalization_of_the_loss_function}
 
-Defining the loss function for this formulation requires us to compare \emph{every} value within \emph{every} position, to \emph{every other} value within \emph{every} position.\footnote{The wording is important} this is  And we must do so, while taking both of their confidence's into account (ie. the distance metric should be scaled by their confidence). Therefore, the distance should be scaled with
-\begin{equation}
-    S_{ab}S_{cd}
-\end{equation}
+Defining the loss function for this formulation requires us to compare \emph{every} value within \emph{every} position, to \emph{every other}\footnote{Ensuring unique \emph{token value} comparisons} value within \emph{every} position. We must do so while taking into account both of the confidences within every comparison (ie. the distance metric should be scaled by their confidence). Therefore, for the token value $b$ in the position $a$, compared to the token value $d$ in the position $c$, the distance should be scaled by a factor of $S_{a,b}S_{c,d}$, because the elements within $S$ reflect to what extent the value comparison affects the loss (ie. the distance metric).
 
-The distance between these two probabilities is defined as $C_{a,c}$, because only the indices $a$ and $c$ correspond to positions on the grid (thus being important in calculating distance), whereas $b$ and $d$ correspond to only the token itself.
+The distance between these two probabilities is defined as $C_{a,c}$, because $a$ and $c$ correspond to the token position (and distance does not depend on token value). Whereas $C_{b,d}$ corresponds to the distance between the 2 tokens within $O$, since within $O$, the token values are equal to the token positions (\ref{sub:toroidal_grid}).
 
-Alike with the situation in \autoref{ssub:token_comparisons}, we must prevent duplicate comparisons between values (not position), for example: each of %
+Alike with the situation in \ref{ssub:token_comparisons}, we must prevent duplicate comparisons between values (not positions), for example: each of %
 [$\begin{smallmatrix}AA\\AA\end{smallmatrix}$,%
 $\begin{smallmatrix}AB\\AA\end{smallmatrix}$,%
 $\begin{smallmatrix}BA\\AA\end{smallmatrix}$,%
-$\begin{smallmatrix}BB\\AA\end{smallmatrix}$] should be compared to
+$\begin{smallmatrix}BB\\AA\end{smallmatrix}$] (token value $AA$) should be compared to
 [$\begin{smallmatrix}AA\\AB\end{smallmatrix}$,%
 $\begin{smallmatrix}AB\\AB\end{smallmatrix}$,%
 $\begin{smallmatrix}BA\\AB\end{smallmatrix}$,%
-$\begin{smallmatrix}BB\\AB\end{smallmatrix}$], but not vice versa, because the values (not the positions) will have been compared already. Again, to do so, we must construct an upper triangular matrix $U$, of the shape $N^2\times N^2$.
+$\begin{smallmatrix}BB\\AB\end{smallmatrix}$] (token value $AB$), but not vice versa, because the value comparisons have already been made.
 
 Therefore, the loss function can be written as
 \begin{equation}
-    L(X)=\sum_{a}^{N^2} \sum_{b}^{N^2} \sum_{c}^{N^2} \sum_{d}^{N^2} S_{a,b} S_{c,d} C_{a,c}C_{b,d}U_{a,c}
+    L(S)=\frac{1}{2}\sum_{a}^{N^2} \sum_{b}^{N^2} \sum_{c}^{N^2} \sum_{d}^{N^2} S_{a,b} S_{c,d} C(O)_{a,c}C(O)_{b,d}
 \end{equation}
+Similar to \ref{ssub:loss_function_as_matrix_multiplications}, we can simply divide the loss by 2, because all of the diagonal value comparisons: where $b=d$, are equal to $0$, because it involves the term $C(O)_{b,d}$, the distance of a token against itself.
 
+As a summary:
 \begin{itemize}
-    \item [$\sum_{a}^{N^2}$] Represents an iteration over Source Positions
-    \item [$\sum_{b}^{N^2}$] Represents an iteration over Source Values
-    \item [$\sum_{c}^{N^2}$] Represents an iteration over Target Positions
-    \item [$\sum_{d}^{N^2}$] Represents an iteration over Target Values
-    \item [$S_{a,b}$] Represents the Probability of the Source Position and Value
-    \item [$S_{c,d}$] Represents the Probability of the Target Position and Value
-    \item [$C_{a,c}$] Represents the Distance between Source and Target Position
-    \item [$C_{b,d}$] Represents the Distance between the Source and Target Values in the original grid
-    \item [$U_{a,c}$] Upper triangular matrix to remove redundant value comparisons
+    \item [$\sum_{a}^{N^2}$] Represents an iteration over source position
+    \item [$\sum_{b}^{N^2}$] Represents an iteration over source value
+    \item [$\sum_{c}^{N^2}$] Represents an iteration over target position
+    \item [$\sum_{d}^{N^2}$] Represents an iteration over target values
+    \item [$S_{a,b}$] Represents the probability of the source salue in its position
+    \item [$S_{c,d}$] Represents the probability of the target position and value
+    \item [$C(O)_{a,c}$] Represents the distance between source and target positions
+    \item [$C(O)_{b,d}$] Represents the distance between source and target values in $O$
 \end{itemize}
+
+\subsection{A Comprehensive Example}%
+\label{sub:a_comprehensive_example_2}
+
+

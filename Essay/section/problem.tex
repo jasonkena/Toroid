@@ -32,7 +32,7 @@ According to the problem description on AZsPCs,\cite{zimmermann} the initial tor
 
 The goal of the challenge (and hence this essay) is to create a new grid $X$ --- with tokens rearranged arbitrarily from the initial grid $O$ --- which minimizes a loss function which is computed with the following procedure:
 \begin{enumerate}
-    \item For each unique pair of tokens\footnote{Comparisons between a token and itself do not affect the loss, since the distance between them is $0$, therefore, their inclusion or exclusion does not affect the computation} (eg. $(AA,BA)$ is equivalent to $(BA,AA)$, so $(BA,AA)$ is excluded), calculate the squared distance between them in the new grid,
+    \item For each unique pair of tokens\footnote{Comparisons between a token and itself do not affect the loss, since the distance between them is $0$, therefore, their inclusion or exclusion does not affect the computation} (eg. $[AA,BA]$ is equivalent to $[BA,AA]$, so $[BA,AA]$ is excluded), calculate the squared distance between them in the new grid,
     \item Multiply each of them with the squared distance between the pair of tokens within the original grid
     \item The loss is the sum of all of these products
 \end{enumerate}
@@ -126,7 +126,14 @@ $
 \end{smallmatrix}
 $), because the distance is invariant to the order of the tokens.
 
-But since removing the irregularly shaped duplicate entries is not a trivial task with a 4-dimensional representation --- especially if we extend beyond a $N=2$ grid --- we can simplify the problem by reducing the dimensionality of the grid: from an $N\times N\times N\times N$ grid to a $N^2\times N^2$ grid. The elements within the 4-dimensional matrix are in the form $C_{i,j,k,l}$, and the 2-dimensional grid in the form $C_{ij,kl}$, but both represent the same thing: a the distance between the tokens $\bm{IJ}$ and $\bm{KL}$. The two-dimensional representation of \autoref{fig:4dcomparison} is shown in \autoref{fig:2dcomparison}. By doing so, we can easily remove the duplicate entries by multiplying it with an upper triangular matrix, further explained in \ref{ssub:loss_function_as_matrix_multiplications}. Let $C_{2d}$ denote a function mapping from the input toroidal grid $X$ and returning the 2d-comparison grid $C_{2d}(X)$.
+We can reduce the complexity\footnote{ie. the number of $\Sigma$s in \ref{ssub:loss_function_as_matrix_multiplications}} of the comparisons by reducing the dimensionality of the grid: from an $N\times N\times N\times N$ grid to a $N^2\times N^2$ grid. The elements within the 4-dimensional matrix are in the form $C_{i,j,k,l}$, and the 2-dimensional grid in the form $C_{m,n}$. To do this conversion,
+\begin{align*}
+    m=(i-1)\times N+j &\implies m\div N=i-1 \text{ remainder } j\\
+    n=(k-1)\times N+l &\implies n\div N=j-1 \text{ remainder } l
+\end{align*}
+$-1$ is to account for the rows index starting at $1$.
+
+Regardless, both represent the same thing: the distance between the tokens $\bm{IJ}$ and $\bm{KL}$. The two-dimensional representation of \autoref{fig:4dcomparison} is shown in \autoref{fig:2dcomparison}. Let $C_{2d}$ denote a function mapping from the input toroidal grid $X$ and returning the 2d-comparison grid $C_{2d}(X)$.
 \begin{figure}[htpb]
     \centering
     \begin{subfigure}[t]{0.5\textwidth}
@@ -141,7 +148,7 @@ But since removing the irregularly shaped duplicate entries is not a trivial tas
     \begin{center}
     \twodcomparison{2}
     \end{center}
-    \caption{2-dimensional comparison with elements in the form $C(X)_{ij,kl}$}
+    \caption{2-dimensional comparison with elements in the form $C(X)_{m,n}$}
     \label{fig:2dcomparison}
     \end{subfigure}
 
@@ -149,42 +156,15 @@ But since removing the irregularly shaped duplicate entries is not a trivial tas
     \label{fig:comparisonGrids}
 \end{figure}
 
-\subsubsection{Loss Function as Matrix Multiplications}%
+\subsubsection{Loss Function in Matrix Form}%
 \label{ssub:loss_function_as_matrix_multiplications}
-Let $\odot$ denote the element-wise matrix multiplication
-(eg.~$
-\begin{psmallmatrix}
-    a&b\\
-    c&d
-\end{psmallmatrix}\odot
-\begin{psmallmatrix}
-    e&f\\
-    g&h
-\end{psmallmatrix}=
-\begin{psmallmatrix}
-    a\cdot e&b\cdot f\\
-    c\cdot g&d\cdot h
-\end{psmallmatrix}
-$), and $O$ denotes the original grid. The loss function for toroidal grid $X$ is equal to
+The loss function for toroidal grid $X$ is equal to
 \begin{align*}
-    L(x)&=\sum_i^{N^2}\sum_j^{N^2}C(X)_{ij}C(O)_{ij}U_{ij}\\
-        &=\sum C(X)\odot C(O)\odot U
+    L(X)=\frac{1}{2}\sum_m^{N^2}\sum_n^{N^2}C(X)_{m,n}C(O)_{m,n}
 \end{align*}
-where $C(X),C(O),\text{ and }U$ are matrices of the form $N^2\times N^2$, and $U_{ij}$ is defined with the piece-wise defined function:
-\begin{align*}
-    U_{ij}=
-    \begin{cases}
-        1, & j\geq i \\
-        0, & j<i
-    \end{cases}
-\end{align*}
-an example the matrix $U$ with shape $4\times 4$ is as follows:
- \begin{align*}
-    \begin{bmatrix}
-        1&1&1&1\\
-        0&1&1&1\\
-        0&0&1&1\\
-        0&0&0&1
-    \end{bmatrix}
-\end{align*}
-Multiplying by $U$ has the effect of removing duplicate comparisons, satisfying our requirement of measuring only unique pairs of tokens.
+where $C(X)$ and $C(O)$ are matrices of the form $N^2\times N^2$. Note that the on the diagonal of $C(O)$ and $C(X)$ are comparisons of tokens against themselves, which are all equal to $0$, because the distance between a point and itself is equal to $0$. Therefore, to take into account only the unique comparisons we can simply divide the product between these 2 grids by 2.
+
+\subsubsection{A Comprehensive Example}%
+\label{ssub:a_comprehensive_example}
+
+
