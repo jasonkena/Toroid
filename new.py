@@ -70,7 +70,7 @@ class Grid(nn.Module):
         # self.grid = torch.ones(self.new_size, device=device)/(self.new_size[0])
         self.grid.requires_grad=True
 
-        lr = 1e-6
+        lr = 1e-7
 
         wandb.config.lr = lr
 
@@ -91,24 +91,24 @@ class Grid(nn.Module):
     def grid_loss(self, grid):
         return self.expr(grid, grid, backend="torch")
 
-    def forward(self):
+    def forward(self,ratio):
         self.grid_optim.zero_grad()
         gridloss = self.grid_loss(self.grid)
-        scale_loss = self.scaling_loss()
+        # scale_loss = self.scaling_loss()
+        self.ras()
+        ras_loss=F.mse_loss(self.grid,self.ras_grid,reduction="sum")
         # inv_loss=self.inv_maximum_deviation()/100
         # varianceloss=self.variance_loss()
         # total_loss = gridloss * (1 - ratio) + scale_loss * ratio
         # total_loss = gridloss * (1 - ratio) + varianceloss* ratio
-        # total_loss = gridloss * (1 - ratio) + inv_loss* ratio
         # total_loss = gridloss * (1 - ratio) + scale_loss* ratio*100
-        total_loss = gridloss
+        total_loss = gridloss * (1 - ratio) + ras_loss* ratio
         total_loss.backward(retain_graph=True)
         self.grid_optim.step()
         self.grid.data.abs_()
-        self.ras()
         # print("Real Loss:", self.expr(self.grid, self.grid, backend="torch"))
         print("Grid Loss:", gridloss)
-        print("Scale Loss:", scale_loss)
+        print("Ras Loss:", ras_loss)
         self.discretization()
         real_loss = self.grid_loss(self.discrete)
         print("Real Discrete Loss:",real_loss)
@@ -119,7 +119,7 @@ class Grid(nn.Module):
                 # {"ratio":ratio,"grid_loss": gridloss, "scale_loss": scale_loss, "real_loss": real_loss}
         # )
         wandb.log(
-                {"lr":get_lr(self.grid_optim),"grid_loss": gridloss, "scale_loss": scale_loss, "real_loss": real_loss}
+                {"lr":get_lr(self.grid_optim),"grid_loss": gridloss, "ras_loss": ras_loss, "real_loss": real_loss}
         )
         return total_loss
 
@@ -133,14 +133,12 @@ class Grid(nn.Module):
 
     def ras(self):
         # Where proportion is % of original
-        grid = self.grid.detach()
-
-        scale_a= torch.diag(1 / torch.sum(grid, axis=1))
-        grid = scale_a@ grid
+        scale_a= torch.diag(1 / torch.sum(self.grid, axis=1))
+        grid = scale_a@ self.grid
         scale_b= torch.diag(1 / torch.sum(grid, axis=0))
         grid = grid @ scale_b
 
-        self.grid.data=grid
+        self.ras_grid=grid
         return grid
 
     def discretization(self):
@@ -169,6 +167,6 @@ class Grid(nn.Module):
 
 
 if __name__ == "__main__":
-    size = torch.tensor([6, 6])
+    size = torch.tensor([10, 10])
     wandb.config.size = size[0].item()
     grid = Grid(size)

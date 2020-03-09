@@ -4,8 +4,11 @@
 \label{sub:constraints}
 How do you minimize the function stated above? First of all, you can let all of the confidences be equal to $0$, that way the loss function will be equal to $0$. This behavior should be invalid, and hence it is addressed in \ref{ssub:sinkhorn_knopp_algorithm}. What about negative confidences? That way, the losses that result might be negative. Implications are discussed within \ref{ssub:non_negative_matrices}.
 
-\subsubsection{Sinkhorn-Knopp Algorithm}%
+\subsubsection{PLEASE Ignore this section}%
+%\subsubsection{Sinkhorn-Knopp Algorithm}%
 \label{ssub:sinkhorn_knopp_algorithm}
+After I ran some tests, I realized that this approach didn't work as well as I thought it would. Please look at the next subsection.
+
 Notice the characteristics of \autoref{fig:superpositionShade}. The sum of its confidences within its rows and columns are all equal to $1$. If the sum of the rows were not equal to 1, the probability of being within certain positions, would not be equal 1. And if the columns were not equal to one, that would mean that the probability of having certain token values would not equal to 1. The necessity for this constraint is reflected within the loss function itself. The loss could be zero if the confidences were zero. But this should be impossible, because there exists comparisons between tokens with non-zero values. So these constraints must be enforced.
 
 A matrix that satisfies these constraints (rows and columns summing to one), is called a \emph{doubly stochastic matrix}. A well-known algorithm to convert any non-negative matrix into a doubly stochastic matrix is called the Sinkhorn-Knopp algorithm (also called RAS).\cite{sinkhorn1967concerning} There is a proof\cite{borobia1998matrix} and several papers\cite{chakrabarty2018better,knight2008sinkhorn} analyzing its convergence. Nonetheless, the algorithm itself is simple: iteratively normalizing the rows and columns of a matrix.
@@ -33,13 +36,14 @@ Although this does not prove the convergence of RAS, it at least demonstrates it
 \begin{figure}[htpb]
         \centering
         \input{fig/ras.tex}
-        \caption{Demonstration of RAS convergence: 5 samples with $N=100$, randomly generated from a uniform distribution $[0,1)$. Error is equal to the sum of squared errors of the sums of the rows and columns from 1. Note the logarithmic scale.}%
+        \caption{Demonstration of RAS convergence: 5 samples with $N=100$, randomly generated from a uniform distribution $[0,\frac{2}{N})$. Error is equal to the sum of squared errors of the sums of the rows and columns from 1. Note the logarithmic scale.}%
         \label{fig:ras_demo}
 \end{figure}
 
 
 \subsubsection{Non-negative Matrices}%
 \label{ssub:non_negative_matrices}
+
 Both because Sinkhorn-Knopp requires a non-negative matrix and because negative probabilities do not make sense, we have to ensure that the entries within $S$ are above  $0$. To do that, we can simply take the absolute value of all the entries, before applying RAS.
 \begin{equation}
 K'_{ij}=|K_{ij}|
@@ -52,6 +56,20 @@ Gradient Descent is an algorithm to iteratively optimize a convex function, with
          \theta'=\theta-\alpha \frac{\delta}{\delta \theta}L(\theta)
 \end{equation}
 where $\alpha$ is a parameter determining how big of a change there is between iterations of gradient descent.
+
+\subsubsection{Negative Standard Deviation}%
+\label{ssub:negative_standard_deviation}
+In order to encourage discreteness, we can encourage sparseness within the matrix. That is, we would like one value to be larger than the others, this will help the algorithm within \ref{sec:discretization}. A common known metric to measure the spread of the data is called the standard deviation, and the biased standard deviation\footnote{Used for simplicity} is defined as follows:
+\begin{align*}
+    \frac{\sum_i^N \left(x_i-\overline{x}\right)^2}{N}
+\end{align*}
+But we want to have the value to increase when the spread decreases, so instead, we can the loss is the negative of the standard deviation. But we do not want to measure the spread against the mean, but rather, against the maximum (we want a single large maximum) so we take the negative of the maximum deviation:
+\begin{align*}
+    -\frac{N}{\sum_i^N \left(x_i-\max{x}\right)^2}
+\end{align*}
+
+\subsubsection{Derivative Coming Soon}%
+\label{ssub:derivative_coming_soon}
 
 \subsubsection{Partial Derivative of Loss Function}%
 \label{ssub:derivative_of_loss_function}
@@ -85,13 +103,18 @@ $\bm{C}$ is $0$ because of the comparisons of tokens against themselves. The par
 
 \subsection{Optimization Procedure}%
 \label{sub:optimization_procedure}
+
+\subsubsection{Multi-objective Loss Function}%
+\label{ssub:multi_objective_loss_function}
+Now, we are satisfying multiple objectives: the negative maximum deviation, and the toroidal grid loss too. We can scale these by the losses by arbitrary parameters $\beta$ and $\gamma$
+
 With all of the steps above, we can now optimize $S$. The procedure used within this essay is as following:\footnote{The procedure is by no means optimal. The purpose of this essay is not to be optimal, but to provide insight on what is possible.}
 \begin{enumerate}
     \item Randomly initialize $S$ from a Uniform Distribution (equal probabilities for all values) on the interval $[0,1)$
     \item Repeat until convergence
     \begin{enumerate}
-        \item Ensure $S$ is a non-negative matrix
-         \item Single iteration of RAS
-         \item Single iteration of Gradient Descent
+    \item Sum the Negative Maximum Deviation of all the rows and columns, and the Grid loss
+    \item Calculate the partial derivatives
+    item Perform Gradient Descent
     \end{enumerate}
 \end{enumerate}
