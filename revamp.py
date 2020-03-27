@@ -174,6 +174,15 @@ class Grid(nn.Module):
             grid[:, index[1]] = -1
         return discrete_grid
 
+    def ras(self, tensor, n_iter):
+        for _ in range(n_iter):
+            # Where proportion is % of original
+            scale_a = torch.diag(1 / torch.sum(tensor, axis=1))
+            tensor = scale_a @ self.tensor
+            scale_b = torch.diag(1 / torch.sum(tensor, axis=0))
+            tensor = tensor @ scale_b
+        return tensor
+
 
 def filter_tensor(tensor, revealed, only, fill=False, shape=None):
     # If Only: only revealed will be returned
