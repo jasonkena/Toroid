@@ -134,8 +134,8 @@ class Grid(nn.Module):
                 writer.add_scalar("lr", lr, global_step)
 
                 for reveal in self.revealed:
-                    grid.grad[reveal[0], :] = 0
-                    grid.grad[:, reveal[1]] = 0
+                    grid.grad[reveal[0], :] = -1
+                    grid.grad[:, reveal[1]] = -1
 
                 # Gradient Descent
                 grid.data = grid - lr * grid.grad
@@ -144,14 +144,21 @@ class Grid(nn.Module):
             gridloss = self.grid_loss(grid)
             gridloss.backward()
             # NOTE: maybe RAS here
-
-            for reveal in self.revealed:
-                grid.grad[reveal[0], :] = float("inf")
-                grid.grad[:, reveal[1]] = float("inf")
-
-            self.revealed.append(
-                divmod(torch.argmin(grid.grad).item(), self.new_size[0])
-            )
+            if optim == 0:
+                writer.add_scalar("real_grid_loss", gridloss, n_iter)
+                for reveal in self.revealed:
+                    grid.grad[reveal[0], :] = float("inf")
+                    grid.grad[:, reveal[1]] = float("inf")
+                self.revealed.append(
+                    divmod(torch.argmin(grid.grad).item(), self.new_size[0])
+                )
+            else:
+                for reveal in self.revealed:
+                    grid[reveal[0], :] = 0
+                    grid[:, reveal[1]] = 0
+                self.revealed.append(
+                    divmod(torch.argmax(grid).item(), self.new_size[0])
+                )
 
         # Assert that grid is already discrete
         return grid
@@ -187,9 +194,10 @@ def filter_tensor(tensor, revealed, only):
 if __name__ == "__main__":
     size = torch.tensor([6, 6])
     # number of iterations
+    # optim = 0 and optim = 1 exactly identical
     optim = 10
     # how much is left
-    beta = 0.5
+    beta = 0.1
     writer.add_hparams({"size": size[0].item()}, {})
     grid = Grid(size)
     result = grid.forward(optim, beta)
