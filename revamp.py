@@ -134,8 +134,8 @@ class Grid(nn.Module):
                 writer.add_scalar("lr", lr, global_step)
 
                 for reveal in self.revealed:
-                    grid.grad[reveal[0], :] = -1
-                    grid.grad[:, reveal[1]] = -1
+                    grid.grad[reveal[0], :] = 0
+                    grid.grad[:, reveal[1]] = 0
 
                 # Gradient Descent
                 grid.data = grid - lr * grid.grad
