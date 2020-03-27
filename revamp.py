@@ -86,7 +86,7 @@ class Grid(nn.Module):
     def grid_loss(self, grid):
         return self.expr(grid, grid, backend="torch")
 
-    def forward(self):
+    def forward(self, optim, beta):
         for n_iter in range(self.new_size[0]):
             grid = torch.ones(self.new_size, device=device) / (
                 self.new_size[0] - len(self.revealed)
@@ -95,26 +95,65 @@ class Grid(nn.Module):
                 grid[reveal[0], :] = 0
                 grid[:, reveal[1]] = 0
                 grid[reveal] = 1
-
             grid.requires_grad = True
+
+            for n_optim in range(optim):
+                assert grid.grad is None or torch.all(grid.grad == 0)
+                gridloss = self.grid_loss(grid)
+                gridloss.backward()
+
+                assert torch.all(grid.grad > 0)
+                assert torch.all(grid >= 0)
+
+                prefix = "real_" if (n_optim == 0) else ""
+                global_step = n_iter * optim + n_optim
+
+                writer.add_scalar(prefix + "grid_loss", gridloss, global_step)
+                writer.add_image(prefix + "grid", grid, global_step, dataformats="HW")
+                writer.add_image(
+                    prefix + "filtered_grid",
+                    filter_tensor(grid, self.revealed, only=False),
+                    global_step,
+                    dataformats="HW",
+                )
+                writer.add_image(
+                    prefix + "filtered_grid_grad",
+                    filter_tensor(grid.grad, self.revealed, only=False),
+                    global_step,
+                    dataformats="HW",
+                )
+                writer.add_image(
+                    prefix + "grid_grad", grid.grad, global_step, dataformats="HW",
+                )
+
+                with torch.no_grad():
+                    # lr
+                    alpha = (1 - beta) * grid / grid.grad
+                    lr = torch.min(filter_tensor(alpha, self.revealed, only=False))
+                    assert lr != 0
+                writer.add_scalar("lr", lr, global_step)
+
+                for reveal in self.revealed:
+                    grid.grad[reveal[0], :] = 0
+                    grid.grad[:, reveal[1]] = 0
+
+                # Gradient Descent
+                grid.data = grid - lr * grid.grad
+                grid.grad.zero_()
+
             gridloss = self.grid_loss(grid)
             gridloss.backward()
-            assert torch.all(grid.grad > 0)
-
-            writer.add_scalar("grid_loss", gridloss, n_iter)
-            writer.add_image("grid", grid, n_iter, dataformats="HW")
+            # NOTE: maybe RAS here
 
             for reveal in self.revealed:
                 grid.grad[reveal[0], :] = float("inf")
                 grid.grad[:, reveal[1]] = float("inf")
 
-            writer.add_image("grid_grad", grid.grad, n_iter, dataformats="HW")
             self.revealed.append(
                 divmod(torch.argmin(grid.grad).item(), self.new_size[0])
             )
 
         # Assert that grid is already discrete
-        assert torch.all(self.discretization(grid) == grid)
         return grid
 
     def discretization(self, grid):
@@ -129,8 +168,28 @@ class Grid(nn.Module):
         return discrete_grid
 
 
+def filter_tensor(tensor, revealed, only):
+    # If Only: only revealed will be returned
+    # If Not Only: everything but revealed
+    revealed_rows = [i[0] for i in revealed]
+    revealed_cols = [i[1] for i in revealed]
+
+    index_rows = torch.tensor([i in revealed_rows for i in range(tensor.size(0))])
+    index_cols = torch.tensor([i in revealed_cols for i in range(tensor.size(1))])
+
+    if not only:
+        index_rows = ~index_rows
+        index_cols = ~index_cols
+
+    return tensor[index_rows, :][:, index_cols]
+
+
 if __name__ == "__main__":
     size = torch.tensor([6, 6])
+    # number of iterations
+    optim = 10
+    # how much is left
+    beta = 0.5
     writer.add_hparams({"size": size[0].item()}, {})
     grid = Grid(size)
-    result = grid.forward()
+    result = grid.forward(optim, beta)
