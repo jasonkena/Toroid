@@ -187,18 +187,24 @@ class Grid(nn.Module):
 def filter_tensor(tensor, revealed, only, fill=False, shape=None):
     # If Only: only revealed will be returned
     # If Not Only: everything but revealed
-    revealed = torch.tensor(revealed)
+    if not len(revealed):
+        revealed = [[-1, -1]]
+    revealed = torch.tensor(revealed, device=device)
     revealed_rows = revealed[:, 0]
     revealed_cols = revealed[:, 1]
 
     index_rows = torch.any(
         revealed_rows.unsqueeze(1)
-        == torch.arange((shape[0] if fill else tensor.size(0))).unsqueeze(0),
+        == torch.arange(
+            (shape[0] if fill else tensor.size(0)), device=device
+        ).unsqueeze(0),
         dim=0,
     ).unsqueeze(1)
     index_cols = torch.any(
         revealed_cols.unsqueeze(1)
-        == torch.arange((shape[1] if fill else tensor.size(1))).unsqueeze(0),
+        == torch.arange(
+            (shape[1] if fill else tensor.size(1)), device=device
+        ).unsqueeze(0),
         dim=0,
     ).unsqueeze(0)
 
@@ -207,7 +213,10 @@ def filter_tensor(tensor, revealed, only, fill=False, shape=None):
         index_cols = ~index_cols
 
     if not fill:
-        result = tensor[index_rows & index_cols].view(len(revealed), len(revealed))
+        result = tensor[index_rows & index_cols]
+        # square root
+        size = int(len(result) ** 0.5)
+        result = result.view(size, size)
     else:
         result = torch.zeros(shape)
         result[index_rows & index_cols] = torch.flatten(tensor)
