@@ -6,6 +6,7 @@ import numpy as np
 import opt_einsum as oe
 import os
 
+torch.autograd.set_detect_anomaly(True)
 # import wandb
 from torch.utils.tensorboard import SummaryWriter
 
@@ -86,7 +87,7 @@ class Grid(nn.Module):
     def grid_loss(self, grid):
         return self.expr(grid, grid, backend="torch")
 
-    def forward(self, optim, beta):
+    def forward(self, optim, n_ras, beta):
         for n_iter in range(self.new_size[0]):
             grid = torch.ones(self.new_size, device=device) / (
                 self.new_size[0] - len(self.revealed)
@@ -102,7 +103,10 @@ class Grid(nn.Module):
                 gridloss = self.grid_loss(grid)
                 gridloss.backward()
 
-                assert torch.all(grid.grad > 0)
+                try:
+                    assert torch.all(grid.grad > 0)
+                except:
+                    __import__("pdb").set_trace()
                 assert torch.all(grid >= 0)
 
                 prefix = "real_" if (n_optim == 0) else ""
@@ -127,38 +131,39 @@ class Grid(nn.Module):
                 )
 
                 with torch.no_grad():
+                    grad = filter_tensor(grid.grad, self.revealed, only=False)
+                    grad = self.fix_grad(grad, n_ras)
                     # lr
-                    alpha = (1 - beta) * grid / grid.grad
-                    lr = torch.min(filter_tensor(alpha, self.revealed, only=False))
-                    assert lr != 0
-                writer.add_scalar("lr", lr, global_step)
+                    # set LR for tokens increasing loss
+                    alpha = (
+                        (1 - beta)
+                        * filter_tensor(grid, self.revealed, only=False)[grad > 0]
+                        / grad[grad > 0]
+                    )
+                    if len(alpha):
+                        lr = torch.min(alpha)
+                    else:
+                        lr = 0
 
-                for reveal in self.revealed:
-                    grid.grad[reveal[0], :] = 0
-                    grid.grad[:, reveal[1]] = 0
+                    writer.add_scalar("lr", lr, global_step)
+
+                    grad = filter_tensor(
+                        grad, self.revealed, only=False, fill=True, shape=self.new_size
+                    )
 
                 # Gradient Descent
-                grid.data = grid - lr * grid.grad
+                grid.data = grid - lr * grad
                 grid.grad.zero_()
+                if lr == 0:
+                    break
 
             gridloss = self.grid_loss(grid)
             gridloss.backward()
             # NOTE: maybe RAS here
-            if optim == 0:
-                writer.add_scalar("real_grid_loss", gridloss, n_iter)
-                for reveal in self.revealed:
-                    grid.grad[reveal[0], :] = float("inf")
-                    grid.grad[:, reveal[1]] = float("inf")
-                self.revealed.append(
-                    divmod(torch.argmin(grid.grad).item(), self.new_size[0])
-                )
-            else:
-                for reveal in self.revealed:
-                    grid[reveal[0], :] = 0
-                    grid[:, reveal[1]] = 0
-                self.revealed.append(
-                    divmod(torch.argmax(grid).item(), self.new_size[0])
-                )
+            for reveal in self.revealed:
+                grid[reveal[0], :] = 0
+                grid[:, reveal[1]] = 0
+            self.revealed.append(divmod(torch.argmax(grid).item(), self.new_size[0]))
 
         # Assert that grid is already discrete
         return grid
@@ -175,13 +180,22 @@ class Grid(nn.Module):
         return discrete_grid
 
     def ras(self, tensor, n_iter):
+        assert torch.all(tensor >= 0)
         for _ in range(n_iter):
             # Where proportion is % of original
             scale_a = torch.diag(1 / torch.sum(tensor, axis=1))
-            tensor = scale_a @ self.tensor
+            tensor = scale_a @ tensor
             scale_b = torch.diag(1 / torch.sum(tensor, axis=0))
             tensor = tensor @ scale_b
         return tensor
+
+    def fix_grad(self, grad, n_ras):
+        assert torch.all(grad > 0)
+        offset = torch.tensor(1, device=device, dtype=torch.float) / grad.size(0)
+
+        # Sum across any axis will be 0
+        grad = self.ras(grad, n_ras) - offset
+        return grad
 
 
 def filter_tensor(tensor, revealed, only, fill=False, shape=None):
@@ -189,6 +203,7 @@ def filter_tensor(tensor, revealed, only, fill=False, shape=None):
     # If Not Only: everything but revealed
     if not len(revealed):
         revealed = [[-1, -1]]
+
     revealed = torch.tensor(revealed, device=device)
     revealed_rows = revealed[:, 0]
     revealed_cols = revealed[:, 1]
@@ -218,7 +233,7 @@ def filter_tensor(tensor, revealed, only, fill=False, shape=None):
         size = int(len(result) ** 0.5)
         result = result.view(size, size)
     else:
-        result = torch.zeros(shape)
+        result = torch.zeros(shape, device=device)
         result[index_rows & index_cols] = torch.flatten(tensor)
     return result
 
@@ -227,9 +242,11 @@ if __name__ == "__main__":
     size = torch.tensor([6, 6])
     # number of iterations
     # optim = 0 and optim = 1 exactly identical
-    optim = 10
+    optim = 100
     # how much is left
-    beta = 0.1
+    beta = 0.9
+    n_ras = 5
     writer.add_hparams({"size": size[0].item()}, {})
     grid = Grid(size)
-    result = grid.forward(optim, beta)
+    result = grid.forward(optim, n_ras, beta)
+
