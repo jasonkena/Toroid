@@ -175,20 +175,34 @@ class Grid(nn.Module):
         return discrete_grid
 
 
-def filter_tensor(tensor, revealed, only):
+def filter_tensor(tensor, revealed, only, fill=False, shape=None):
     # If Only: only revealed will be returned
     # If Not Only: everything but revealed
-    revealed_rows = [i[0] for i in revealed]
-    revealed_cols = [i[1] for i in revealed]
+    revealed = torch.tensor(revealed)
+    revealed_rows = revealed[:, 0]
+    revealed_cols = revealed[:, 1]
 
-    index_rows = torch.tensor([i in revealed_rows for i in range(tensor.size(0))])
-    index_cols = torch.tensor([i in revealed_cols for i in range(tensor.size(1))])
+    index_rows = torch.any(
+        revealed_rows.unsqueeze(1)
+        == torch.arange((shape[0] if fill else tensor.size(0))).unsqueeze(0),
+        dim=0,
+    ).unsqueeze(1)
+    index_cols = torch.any(
+        revealed_cols.unsqueeze(1)
+        == torch.arange((shape[1] if fill else tensor.size(1))).unsqueeze(0),
+        dim=0,
+    ).unsqueeze(0)
 
     if not only:
         index_rows = ~index_rows
         index_cols = ~index_cols
 
-    return tensor[index_rows, :][:, index_cols]
+    if not fill:
+        result = tensor[index_rows & index_cols].view(len(revealed), len(revealed))
+    else:
+        result = torch.zeros(shape)
+        result[index_rows & index_cols] = torch.flatten(tensor)
+    return result
 
 
 if __name__ == "__main__":
