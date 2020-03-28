@@ -354,6 +354,7 @@ class Grid(nn.Module):
             grid[:, reveal[1]] = 0
             grid[reveal] = 1
 
+        write_grid(grid, os.path.join("grids", save_name))
         final_loss = self.objective_loss(grid, final=True)
         return final_loss
 
@@ -529,9 +530,9 @@ parser.add_argument("--size", default=5, type=int, help="Size of the grid")
 
 args = parser.parse_args()
 
-writer = SummaryWriter(
-    log_dir="runs/size" + str(args.size) + "optim" + str(args.n_optim)
-)
+save_name = "size" + str(args.size) + "optim" + str(args.n_optim)
+
+writer = SummaryWriter(log_dir=os.path.join("runs", save_name))
 
 if __name__ == "__main__":
     print("Size:", args.size, " n_optim:", args.n_optim)
