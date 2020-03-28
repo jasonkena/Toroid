@@ -5,12 +5,12 @@ import torch.optim as optim
 import numpy as np
 import opt_einsum as oe
 import os
+from tqdm import tqdm
 
 torch.autograd.set_detect_anomaly(True)
 # import wandb
 from torch.utils.tensorboard import SummaryWriter
 
-writer = SummaryWriter()
 # wandb.init(project="toroid", sync_tensorboard=True)
 
 # from apex import amp
@@ -87,8 +87,12 @@ class Grid(nn.Module):
     def grid_loss(self, grid):
         return self.expr(grid, grid, backend="torch")
 
-    def forward(self, optim, n_ras, beta):
-        for n_iter in range(self.new_size[0]):
+    def forward(self, optim, n_ras):
+        for n_iter in tqdm(range(self.new_size[0])):
+            # grid = (
+            # torch.eye(self.new_size[0], device=device) * 0.2
+            # + torch.ones(self.new_size[0], device=device) * 0.8 / self.new_size[0]
+            # )
             grid = torch.ones(self.new_size, device=device) / (
                 self.new_size[0] - len(self.revealed)
             )
@@ -98,7 +102,7 @@ class Grid(nn.Module):
                 grid[reveal] = 1
             grid.requires_grad = True
 
-            for n_optim in range(optim):
+            for n_optim in tqdm(range(optim), leave=False):
                 assert grid.grad is None or torch.all(grid.grad == 0)
                 gridloss = self.grid_loss(grid)
                 gridloss.backward()
@@ -109,56 +113,66 @@ class Grid(nn.Module):
                     __import__("pdb").set_trace()
                 assert torch.all(grid >= 0)
 
-                prefix = "real_" if (n_optim == 0) else ""
                 global_step = n_iter * optim + n_optim
 
-                writer.add_scalar(prefix + "grid_loss", gridloss, global_step)
-                writer.add_image(prefix + "grid", grid, global_step, dataformats="HW")
+                discrete_loss = self.grid_loss(self.discretization(grid))
+                writer.add_scalar(
+                    "realtime_discrete_loss", discrete_loss, global_step,
+                )
+                writer.add_scalar("grid_loss", gridloss, global_step)
+                writer.add_image("grid", grid, global_step, dataformats="HW")
                 writer.add_image(
-                    prefix + "filtered_grid",
+                    "filtered_grid",
                     filter_tensor(grid, self.revealed, only=False),
                     global_step,
                     dataformats="HW",
                 )
                 writer.add_image(
-                    prefix + "filtered_grid_grad",
+                    "filtered_grid_grad",
                     filter_tensor(grid.grad, self.revealed, only=False),
                     global_step,
                     dataformats="HW",
                 )
                 writer.add_image(
-                    prefix + "grid_grad", grid.grad, global_step, dataformats="HW",
+                    "grid_grad", grid.grad, global_step, dataformats="HW",
                 )
 
                 with torch.no_grad():
-                    grad = filter_tensor(grid.grad, self.revealed, only=False)
-                    grad = self.fix_grad(grad, n_ras)
+                    filtered_grad = filter_tensor(grid.grad, self.revealed, only=False)
+                    filtered_grid = filter_tensor(grid, self.revealed, only=False)
+
+                    # making Gradient Zero line sum
+                    filtered_grad = self.fix_grad(filtered_grad, n_ras)
                     # lr
                     # set LR for tokens increasing loss
                     alpha = (
-                        (1 - beta)
-                        * filter_tensor(grid, self.revealed, only=False)[grad > 0]
-                        / grad[grad > 0]
+                        filtered_grid[filtered_grad > 0]
+                        / filtered_grad[filtered_grad > 0]
                     )
                     if len(alpha):
-                        lr = torch.min(alpha)
+                        # NOTE: maybe use Median
+                        lr = torch.mean(alpha)
+                        # assert lr != 0
                     else:
                         lr = 0
 
                     writer.add_scalar("lr", lr, global_step)
 
-                    grad = filter_tensor(
-                        grad, self.revealed, only=False, fill=True, shape=self.new_size
-                    )
+                    filtered_grid = filtered_grid - lr * filtered_grad
+                    if torch.any(filtered_grid < 0):
+                        filtered_grid = self.fix_grid(filtered_grid)
 
+                    grid.data = filter_tensor(
+                        filtered_grid, self.revealed, only=False, fill=grid.data
+                    )
                 # Gradient Descent
-                grid.data = grid - lr * grad
                 grid.grad.zero_()
                 if lr == 0:
                     break
 
             gridloss = self.grid_loss(grid)
             gridloss.backward()
+            result = grid.clone()
             # NOTE: maybe RAS here
             for reveal in self.revealed:
                 grid[reveal[0], :] = 0
@@ -166,7 +180,7 @@ class Grid(nn.Module):
             self.revealed.append(divmod(torch.argmax(grid).item(), self.new_size[0]))
 
         # Assert that grid is already discrete
-        return grid
+        return result, discrete_loss
 
     def discretization(self, grid):
         grid = grid.clone()
@@ -197,8 +211,18 @@ class Grid(nn.Module):
         grad = self.ras(grad, n_ras) - offset
         return grad
 
+    def fix_grid(self, grid):
+        offset = -torch.min(grid)
+        assert offset >= 0
 
-def filter_tensor(tensor, revealed, only, fill=False, shape=None):
+        grid = grid + offset
+        grid = grid / (grid.size(0) * offset + 1)
+
+        assert torch.all(grid >= 0)
+        return grid
+
+
+def filter_tensor(tensor, revealed, only, fill=None):
     # If Only: only revealed will be returned
     # If Not Only: everything but revealed
     if not len(revealed):
@@ -211,14 +235,14 @@ def filter_tensor(tensor, revealed, only, fill=False, shape=None):
     index_rows = torch.any(
         revealed_rows.unsqueeze(1)
         == torch.arange(
-            (shape[0] if fill else tensor.size(0)), device=device
+            (fill.size(0) if fill is not None else tensor.size(0)), device=device
         ).unsqueeze(0),
         dim=0,
     ).unsqueeze(1)
     index_cols = torch.any(
         revealed_cols.unsqueeze(1)
         == torch.arange(
-            (shape[1] if fill else tensor.size(1)), device=device
+            (fill.size(1) if fill is not None else tensor.size(1)), device=device
         ).unsqueeze(0),
         dim=0,
     ).unsqueeze(0)
@@ -227,26 +251,42 @@ def filter_tensor(tensor, revealed, only, fill=False, shape=None):
         index_rows = ~index_rows
         index_cols = ~index_cols
 
-    if not fill:
+    if fill is None:
         result = tensor[index_rows & index_cols]
         # square root
         size = int(len(result) ** 0.5)
         result = result.view(size, size)
+        return result
     else:
-        result = torch.zeros(shape, device=device)
-        result[index_rows & index_cols] = torch.flatten(tensor)
-    return result
+        fill[index_rows & index_cols] = torch.flatten(tensor)
+        return fill
 
+
+import argparse
+
+parser = argparse.ArgumentParser(description="Reversing Nearness via Gradient Descent")
+parser.add_argument(
+    "--n_optim", default=10, type=int, help="Number of optimization steps"
+)
+parser.add_argument(
+    "--n_ras", default=5, type=int, help="Number of Sinkhorn-Knopp iterations"
+)
+parser.add_argument("--size", default=5, type=int, help="Size of the grid")
+
+args = parser.parse_args()
+
+writer = SummaryWriter(
+    log_dir="runs/size" + str(args.size) + "optim" + str(args.n_optim)
+)
 
 if __name__ == "__main__":
-    size = torch.tensor([6, 6])
+    print("Size:", args.size, " n_optim:", args.n_optim)
+    size = torch.tensor([args.size, args.size])
     # number of iterations
-    # optim = 0 and optim = 1 exactly identical
-    optim = 100
-    # how much is left
-    beta = 0.9
-    n_ras = 5
-    writer.add_hparams({"size": size[0].item()}, {})
     grid = Grid(size)
-    result = grid.forward(optim, n_ras, beta)
+    result, discrete_loss = grid.forward(args.n_optim, args.n_ras)
+    writer.add_hparams(
+        {"size": args.size, "n_optim": args.n_optim, "n_ras": args.n_ras},
+        {"discrete_loss": discrete_loss},
+    )
 
