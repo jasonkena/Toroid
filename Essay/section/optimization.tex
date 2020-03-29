@@ -1,81 +1,26 @@
 \section{Optimization}%
 \label{sec:optimization}
-\subsection{Constraints}%
-\label{sub:constraints}
-How do you minimize the function stated above? First of all, you can let all of the confidences be equal to $0$, that way the loss function will be equal to $0$. This behavior should be invalid, and hence it is addressed in \ref{ssub:sinkhorn_knopp_algorithm}. What about negative confidences? That way, the losses that result might be negative. Implications are discussed within \ref{ssub:non_negative_matrices}.
-
-\subsubsection{PLEASE Ignore this section}%
-%\subsubsection{Sinkhorn-Knopp Algorithm}%
-\label{ssub:sinkhorn_knopp_algorithm}
-After I ran some tests, I realized that this approach didn't work as well as I thought it would. Please look at the next subsection.
-
-Notice the characteristics of \autoref{fig:superpositionShade}. The sum of its confidences within its rows and columns are all equal to $1$. If the sum of the rows were not equal to 1, the probability of being within certain positions, would not be equal 1. And if the columns were not equal to one, that would mean that the probability of having certain token values would not equal to 1. The necessity for this constraint is reflected within the loss function itself. The loss could be zero if the confidences were zero. But this should be impossible, because there exists comparisons between tokens with non-zero values. So these constraints must be enforced.
-
-A matrix that satisfies these constraints (rows and columns summing to one), is called a \emph{doubly stochastic matrix}. A well-known algorithm to convert any non-negative matrix into a doubly stochastic matrix is called the Sinkhorn-Knopp algorithm (also called RAS).\cite{sinkhorn1967concerning} There is a proof\cite{borobia1998matrix} and several papers\cite{chakrabarty2018better,knight2008sinkhorn} analyzing its convergence. Nonetheless, the algorithm itself is simple: iteratively normalizing the rows and columns of a matrix.
-
- Let $K$ be an $n\times n$ non-negative matrix. A single iteration of RAS is defined as follows:
-
-\begin{align*}
-        K'=&\begin{bmatrix}
-                (\Sigma_j^N K_{1,j})^{-1}\\
-                &\ddots{}\\
-                &&(\Sigma_j^N K_{N,j})^{-1}
-        \end{bmatrix}K &&\text{normalizing rows}\\
-                K''=K'&\begin{bmatrix}
-                (\Sigma_i^N K'_{i,1})^{-1}\\
-                &\ddots{}\\
-                &&(\Sigma_i^N K'_{i,N})^{-1}
-        \end{bmatrix}&&\text{normalizing columns}
-\end{align*}
-Blank entries are $0$s. Here, normalizing rows simply means dividing each element by the sum of its row, and normalizing columns simply means dividing each element by the sum of its column. \autoref{fig:ras_demo} demonstrates the effectiveness of RAS. Graphed on the y-axis is the squared error, defined as:
-\begin{align*}
-        E(X)=\sum^N_i\left(\left(\sum^N_jX_{ij}\right)-1\right)^2+\sum^N_j\left(\left(\sum^N_iX_{ij}\right)-1\right)^2
-\end{align*}
-Although this does not prove the convergence of RAS, it at least demonstrates its effectiveness.
-
-\begin{figure}[htpb]
-        \centering
-        \input{fig/ras.tex}
-        \caption{Demonstration of RAS convergence: 5 samples with $N=100$, randomly generated from a uniform distribution $[0,\frac{2}{N})$. Error is equal to the sum of squared errors of the sums of the rows and columns from 1. Note the logarithmic scale.}%
-        \label{fig:ras_demo}
-\end{figure}
-
-
-\subsubsection{Non-negative Matrices}%
-\label{ssub:non_negative_matrices}
-
-Both because Sinkhorn-Knopp requires a non-negative matrix and because negative probabilities do not make sense, we have to ensure that the entries within $S$ are above  $0$. To do that, we can simply take the absolute value of all the entries, before applying RAS.
-\begin{equation}
-K'_{ij}=|K_{ij}|
-\end{equation}
 
 \subsection{Gradient Descent}%
 \label{sub:gradient_descent}
-Gradient Descent is an algorithm to iteratively optimize a convex function, with knowledge of the derivative of the function with respect to all of the function parameters $\theta$. In the case of optimizing a loss function, steps must be taken in the direction opposite to the gradient, therefore, the equation is as follows
+Gradient descent is an iterative optimization algorithm, utilizing the first derivative of the loss function $L$ with respect to all function parameters $\theta$. To recall, a single iteration of gradient descent is as follows:
 \begin{equation}
          \theta'=\theta-\alpha \frac{\delta}{\delta \theta}L(\theta)
 \end{equation}
-where $\alpha$ is a parameter determining how big of a change there is between iterations of gradient descent.
+$\alpha$ is an arbitrary scaling factor usually called \emph{learning rate}.
 
-\subsubsection{Negative Standard Deviation}%
-\label{ssub:negative_standard_deviation}
-In order to encourage discreteness, we can encourage sparseness within the matrix. That is, we would like one value to be larger than the others, this will help the algorithm within \ref{sec:discretization}. A common known metric to measure the spread of the data is called the standard deviation, and the biased standard deviation\footnote{Used for simplicity} is defined as follows:
-\begin{align*}
-    \frac{\sum_i^N \left(x_i-\overline{x}\right)^2}{N}
-\end{align*}
-But we want to have the value to increase when the spread decreases, so instead, we can the loss is the negative of the standard deviation. But we do not want to measure the spread against the mean, but rather, against the maximum (we want a single large maximum) so we take the negative of the maximum deviation:
-\begin{align*}
-    -\frac{N}{\sum_i^N \left(x_i-\max{x}\right)^2}
-\end{align*}
-
-\subsubsection{Derivative Coming Soon}%
-\label{ssub:derivative_coming_soon}
+\begin{figure}[htpb]
+        \centering
+        \input{fig/gradient.tex}
+        \caption{Demonstration of gradient descent convergence: 10 iterations with $\alpha =5\times 10^{-2}$ and $\theta_0=1.8$.}%
+        \label{fig:gradient_demo}
+\end{figure}
 
 \subsubsection{Partial Derivative of Loss Function}%
 \label{ssub:derivative_of_loss_function}
-The derivative of a multi-variable function \wrt{} a single variable, is called a partial-derivative, and is denoted by $\frac{\delta}{\delta x}$ instead of $\frac{d}{dx}$. Since our goal is to update each of the paramaters within $S$, we need to find a matrix which contains partial derivatives of the loss funtion against all of the elements.\footnote{This is very similar to Jacobian matrices; except that the Jacobian takes the partial derivatives of a vector against a vector, but we are taking partial derivatives of a scalar against a matrix.} That is, we are trying to find:
+A partial derivative is the derivative of a multi-variable function \wrt{} a single variable, and is denoted by $\frac{\delta}{\delta x}$ instead of $\frac{d}{dx}$. Hence, our goal is to find the Jacobian matrix $\bm{J}$ of $L(S)$ \wrt{} $S$, defined as follows:
  \begin{align*}
-         \frac{\delta L(S)}{\delta S}= \begin{bmatrix}
+     \bm{J}=\frac{\delta L(S)}{\delta S}= \begin{bmatrix}
                  \frac{\delta L(S)}{\delta S_{1,1}}&\cdots &\frac{\delta L(S)}{\delta S_{1,N^2}}\\
                  \vdots &\ddots &\vdots \\
                  \frac{\delta L(S)}{\delta S_{N^2,1}}&\cdots &\frac{\delta L(S)}{\delta S_{N^2,N^2}}\\
@@ -86,35 +31,210 @@ To do that, we need to find the general solution to the partial derivative: $ \f
 \begin{align*}
     L(S)=\frac{1}{2}\sum_{a}^{N^2} \sum_{b}^{N^2} \sum_{c}^{N^2} \sum_{d}^{N^2} S_{a,b} S_{c,d} C(O)_{a,c}C(O)_{b,d}
 \end{align*}
-Recall that in partial derivatives, only the variable in question (ie. $S_{i,j}$) is treated as a variable, the rest are treated as constants. We can see that the term $S_{i,j}$ is included within the loss when $(a,b)=(i,j)$ or $(c,d)=(i,j)$ or both. The derivatives are as following:
+When evaluating $J_{i,j}$, only $S_{i,j}$ is treated as a variable, others are treated as constants. $S_{i,j}$ is only included within the loss when $(a,b)=(i,j)$ or $(c,d)=(i,j)$ or both. The derivatives for the respective cases are as follows:
 \begin{align*}
-        \bm{A}=\frac{\delta L(S)}{\delta S_{i,j}}&=\frac{\delta}{\delta S_{i,j}}\left(\frac{1}{2}\sum_{c}^{N^2} \sum_{d}^{N^2} S_{i,j} S_{c,d} C(O)_{i,c}C(O)_{j,d}\right)&\text{First case}\\
+        \bm{A}=\frac{\delta L(S)}{\delta S_{i,j}}&=\frac{\delta}{\delta S_{i,j}}\left(\frac{1}{2}\sum_{c}^{N^2} \sum_{d}^{N^2} S_{i,j} S_{c,d} C(O)_{i,c}C(O)_{j,d}\right)&\text{first case}\\
               &=\frac{1}{2}\sum_{c}^{N^2} \sum_{d}^{N^2} S_{c,d} C(O)_{i,c}C(O)_{j,d}&\\
-        \bm{B}=\frac{\delta L(S)}{\delta S_{i,j}}&=\frac{\delta}{\delta S_{i,j}}\left(\frac{1}{2}\sum_{a}^{N^2} \sum_{b}^{N^2} S_{a,b} S_{i,j} C(O)_{a,i}C(O)_{b,j}\right)&\text{Second case}\\
+        \bm{B}=\frac{\delta L(S)}{\delta S_{i,j}}&=\frac{\delta}{\delta S_{i,j}}\left(\frac{1}{2}\sum_{a}^{N^2} \sum_{b}^{N^2} S_{a,b} S_{i,j} C(O)_{a,i}C(O)_{b,j}\right)&\text{second case}\\
               &=\frac{1}{2}\sum_{a}^{N^2} \sum_{b}^{N^2} S_{a,b} C(O)_{a,i}C(O)_{b,j}&\\
-        \bm{C}=\frac{\delta L(S)}{\delta S_{i,j}}&=\frac{\delta}{\delta S_{i,j}}\left(\frac{1}{2}S_{a,b} S_{a,b} C(O)_{a,b}C(O)_{a,b}\right)&\text{Third case}\\
+        \bm{C}=\frac{\delta L(S)}{\delta S_{i,j}}&=\frac{\delta}{\delta S_{i,j}}\left(\frac{1}{2}S_{a,b} S_{a,b} C(O)_{a,b}C(O)_{a,b}\right)&\text{third case}\\
               &=\frac{1}{2}\sum_{a}^{N^2} \sum_{b}^{N^2} S_{a,b} C(O)_{a,a}C(O)_{b,b}&\\
               &=0&
 \end{align*}
-$\bm{C}$ is $0$ because of the comparisons of tokens against themselves. The partial derivative of $L(S)$ against $S_{i,j}$ is equal to $\bm{A}+\bm{B}-\bm{C}=\bm{A}+\bm{B}$, because $\bm{A}$ and $\bm{B}$ represent all the cases in which $S_{i,j}$ is part of the loss function. Now, we can optimize $S$ with the Gradient Descent:
+$\bm{C}$ is $0$ due because it includes the distance of a token against itself. The partial derivative of $L(S)$ \wrt{} $S_{i,j}$ is therefore equal to $\bm{A}+\bm{B}-\bm{C}=\bm{A}+\bm{B}$, because they encapsulate all of the cases where $S_{i,j}$ is a part of a term. A naive approach would be to update the entries as follows:
 \begin{align*}
         S_{i,j}'=S_{i,j}-\alpha \left(\bm{A}+\bm{B}\right)
 \end{align*}
 
+\subsection{Generalization of Discrete Constraints}%
+\label{sub:constraints}
+
+\subsubsection{Doubly Stochastic Matrices}%
+\label{ssub:doubly_stochastic_matrices}
+First of all, regardless of whether discrete grids or superposition grids are involved, \emph{negative weights do not make sense}, as weights represent what portion of the token is located within a certain position.
+
+Within $X$ or $O$, every position has a \emph{single} unique token, and every token has a \emph{single} unique position. To put it another way, no token does not have a position, and no position does not have a token. Note the superposition of a discrete grid in \ref{fig:superpositionShade}, the sums of all the rows and columns are equal to 1. In other words, the sum of all the weights within every position is 1, and the sum of all the weights of every token is 1. That is, a matrix $A$ with non-negative values and
+\begin{align*}
+    \sum_i A_{i,j}=\sum_j A_{i,j}=1
+\end{align*}
+is called a doubly stochastic matrix.\cite{weissteinDoubly} Therefore, the superposition $S$ must always be doubly stochastic.
+
+\subsubsection{Sinkhorn-Knopp Algorithm}%
+\label{ssub:sinkhorn_knopp_algorithm}
+This section explains the algorithm used within \ref{ssub:zero_line_sum_modified_jacobian}.
+A well-known algorithm to convert any non-negative matrix into a doubly stochastic matrix is called the Sinkhorn-Knopp algorithm (also named RAS).\cite{sinkhorn1967concerning} There is a proof\cite{borobia1998matrix} and several papers\cite{chakrabarty2018better,knight2008sinkhorn} analyzing its convergence. Nonetheless, the algorithm itself is simple: repetitively normalizing the rows and columns of a matrix.
+
+Let $K$ be an $n\times n$ non-negative matrix.\footnote{every row and column should contain at least 1 positive value} A single iteration of RAS is defined as follows:
+
+\begin{align*}
+        K'=&\begin{bmatrix}
+                (\Sigma_j^N K_{1,j})^{-1}\\
+                &\ddots{}\\
+                &&(\Sigma_j^N K_{N,j})^{-1}
+        \end{bmatrix}K &&\text{normalizing rows}\\
+            \text{RAS}(K)=K''=K'&\begin{bmatrix}
+                (\Sigma_i^N K'_{i,1})^{-1}\\
+                &\ddots{}\\
+                &&(\Sigma_i^N K'_{i,N})^{-1}
+        \end{bmatrix}&&\text{normalizing columns}
+\end{align*}
+The scaling matrices are diagonal (non-diagonal elements are $0$s). Here, ``normalizing'' is defined as forming a sum of 1. \autoref{fig:ras_demo} demonstrates the effectiveness of RAS. Graphed on the y-axis is the squared error, defined as:
+\begin{align*}
+        E(X)=\sum^N_i\left(\left(\sum^N_jX_{i,j}\right)-1\right)^2+\sum^N_j\left(\left(\sum^N_iX_{i,j}\right)-1\right)^2
+\end{align*}
+Although this does not prove the convergence of RAS, it demonstrates its effectiveness.
+
+\begin{figure}[htpb]
+        \centering
+        \input{fig/ras.tex}
+        \caption{Demonstration of RAS convergence: 5 samples with $N=100$, randomly generated from a uniform distribution $[0,\frac{2}{N})$ (mean $\frac{1}{N}$ ). Error is equal to the sum of squared errors of the sums of the rows and columns from 1. Note the logarithmic scale.}%
+        \label{fig:ras_demo}
+\end{figure}
+
+Another example of the RAS algorithm:
+\begin{align*}
+    K=&\begin{bmatrix}
+        0&2&4\\
+        1&3&5\\
+        2&4&6
+    \end{bmatrix}\\
+    K'=
+    \begin{bmatrix}
+        \frac{1}{6}&0&0\\
+        0&\frac{1}{9} &0\\
+        0&0&\frac{1}{12}
+    \end{bmatrix}
+     &\begin{bmatrix}
+        0&2&4\\
+        1&3&5\\
+        2&4&6
+    \end{bmatrix}=
+    \begin{bmatrix}
+        0&\frac{1}{3}&\frac{2}{3}\\[4pt]
+        \frac{1}{9}&\frac{1}{3}&\frac{5}{9}\\[4pt]
+        \frac{1}{6}&\frac{1}{3}&\frac{1}{2}
+    \end{bmatrix}\\
+    \text{RAS}(K)=K''=
+     &\begin{bmatrix}
+         0&\frac{1}{3}&\frac{2}{3}\\[4pt]
+         \frac{1}{9}&\frac{1}{3}&\frac{5}{9}\\[4pt]
+        \frac{1}{6}&\frac{1}{3}&\frac{1}{2}
+    \end{bmatrix}
+    \begin{bmatrix}
+         \frac{18}{5}&0&0\\
+         0&1&0\\
+         0&0&\frac{18}{31}
+    \end{bmatrix}=
+    \begin{bmatrix}
+        0&\frac{1}{3}&\frac{12}{31}\\[4pt]
+        \frac{2}{5}&\frac{1}{3}&\frac{10}{31}\\[4pt]
+        \frac{3}{5}&\frac{1}{3}&\frac{9}{31}
+    \end{bmatrix}
+\end{align*}
+
+\subsubsection{Zero Line-Sum Modified Jacobian}%
+\label{ssub:zero_line_sum_modified_jacobian}
+To maintain the doubly stochastic nature of the superposition grid within gradient descent update (in \ref{ssub:derivative_of_loss_function}), the Jacobian matrix must be modified into a zero line-sum (ZLS) matrix.\cite{zeroLineSum} A ZLS matrix has all rows and columns summing to 1, that is, a matrix $A$ is ZLS iff.
+\begin{align*}
+    \sum_i A_{i,j}=\sum_j A_{i,j}=0
+\end{align*}
+
+As stated within \cite{zeroLineSum}, a ZLS can be obtained by taking the difference of 2 doubly stochastic matrices.
+\begin{proof}
+    Let $A$ and $B$ be doubly stochastic matrices.
+    \begin{align*}
+        \sum_i \left(A_{i,j}-B_{i,j}\right)= \sum_i A_{i,j}-\sum_i B_{i,j}=1-1=0\\
+        \sum_j \left(A_{i,j}-B_{i,j}\right)= \sum_j A_{i,j}-\sum_j B_{i,j}=1-1=0
+    \end{align*}
+    Therefore, $A-B$ is doubly stochastic.
+\end{proof}
+
+Hence, a Jacobian can be converted into a doubly stochastic matrix through the RAS algorithm,\footnote{the Jacobian of the loss function is non-negative because $S$ and $C(O)$ are non-negative, so RAS is applicable} and by subtracting it by another doubly stochastic matrix, a ZLS-Jacobian can be obtained. This second doubly stochastic matrix can be obtained by scaling a ones-matrix (matrix filled with ones). Let this second doubly stochastic matrix be $D$ with dimension $N\times N$. $D$ is defined as follows:
+\begin{align*}
+    D_{i,j}&=\frac{1}{N}\\
+    \sum_i D_{i,j}&=\sum_j D_{i,j}=N\times \frac{1}{N}=1 &\text{$D$ is doubly stochastic}
+\end{align*}
+Because $D$ is uniform (all elements have identical values), the magnitudes of the elements doubly stochastic Jacobian elements \wrt{} other elements are preserved, that is $\text{RAS}(J)_{a,b}>\text{RAS}(J)_{c,d} \iff \text{RAS}(J)_{a,b}-D_{a,b}>\text{RAS}(J)_{c,d}-D_{c,d}$
+
+Let $J'=\text{RAS}(J)-D$.
+
+\subsubsection{Non-negative Matrices}%
+\label{ssub:non_negative_matrices}
+Assuming $S$ is doubly stochastic, and with ZLS-$J'$, the result of the gradient descent update $S'=S-\alpha J'$, has rows and columns summing to 1. \emph{But $S'$ is not necessarily doubly stochastic, because $S'$ might not be non-negative}. Given that $S'$ has dimension $N^2\times N^2$ the following procedure corrects negative entries while still maintaining the rows and columns summing to 1, effectively ensuring that $S'$ is doubly stochastic:
+
+\begin{align*}
+ S''_{i,j}=
+\begin{cases}
+    (S'_{i,j}+\min{S})\times \frac{1}{1+N^2 \min{S}} & \exists a,b\quad S'_{a,b}<0\\
+    S'_{i,j} & \nexists a,b\quad S'_{a,b}<0
+\end{cases}
+\end{align*}
+$\min{S'}$ refers to the smallest value within $S'$. $S'_{i,j}+\min{S}$ effectively creates a non-negative matrix.\footnote{$\exists a,b\quad S'_{a,b}<0$ means ``exists $a,b$ such that $S'_{a,b}$ is negative''}
+
+\begin{proof}
+    Let $S'$ be a matrix with rows and columns summing to 1.
+    \begin{align*}
+        \sum_i^{N^2} S''_{i,j}&=\sum_i^{N^2} (S'_{i,j}+\min{S})\times \frac{1}{1+N^2 \min{S}}=\frac{1}{1+N^2 \min{S}} \sum_i^{N^2} (S'_{i,j}+\min{S})\\
+                             &=\frac{1}{1+N^2 \min{S}} (\sum_i^{N^2} (S'_{i,j})+N^2\min{S})=\frac{1}{1+N^2 \min{S}} (1+N^2\min{S})\\
+                       &=1
+    \end{align*} Replace $\sum_i^{N^2}$ with $\sum_j^{N^2}$ and repeat. Therefore, $S''$ is doubly stochastic.
+\end{proof}
+
+With this, $S$ can be optimized by gradient descent.
+
+\subsection{Generalization to Discrete Solutions}%
+\label{sub:generalization_to_discrete_solutions}
+Note that only the continuous representation $S$ has been optimized, and not the discrete solution $X$, which has been the goal of the essay. Expanding on the idea of quantum superposition within physics, by observing (or revealing) the position of an electron, the probability density function of the electron position collapses, being reduced to a single point. And because it relates with probabilities, the results are random, they are \emph{probabilistic}. Within this essay, the probability density function has been represented by the weights of fragments within various positions. But instead of sampling from a distribution, by revealing a token, it will be placed in the position of the fragment with the highest weight, ie. the most likely position.
+
+Taking this analogy even further, the tokens are \emph{entangled}. In physics, if two electrons are entangled, when the \emph{spin}\footnote{a quantum property beyond the scope of this essay} of an electron is revealed, the other is also instantaneously revealed. If one is found to be spin up, the other electron has spin down, vice versa. The system within this essay involves $N$  ``electrons'' (tokens), and when the position of this is revealed, the fragments from other tokens within the same position are removed, because no two tokens should inhabit the same position.
+
+Also, the fragments of revealed tokens (columns of $S$) and fragments within revealed positions (rows of $S$) should be optimized. Since revealed tokens and positions are \emph{fixed}.
+
+The procedure for revealing a token is defined as follows Let $R=\emptyset$ be a set of indices (rows and columns) of revealed fragments.
+\begin{align*}
+    R\leftarrow R\cup \argmax_{(m,n)\notin R}S_{m,n}\\
+    S_{i,j}=
+    \begin{cases}
+        S_{ij}
+    \end{cases}
+\end{align*}
+$\argmax_{(m,n)\notin R}S_{m,n}$ returns the indices of the fragment with the highest weight, $a\leftarrow b$ indicates a reassignment: the new value of $a$ is $b$.
+
+To only perform optimization on non-revealed token fragments and positions, the revealed rows and columns can be removed from $J$, the appropriate procedures can be performed to obtain $J'$, and the $J'$ can be expanded to its original dimensions $N^2\times N^2$, by filling the revealed rows and columns with $0$s, effectively preventing optimization of revealed rows and columns.
+
+Note that the previous procedure only works when $\argmax$ is defined, \emph{when there are tokens to reveal}, when  $|R|<N$, where $|R|$ denotes the number of indices within $R$.
+
 \subsection{Optimization Procedure}%
 \label{sub:optimization_procedure}
+\subsubsection{Superposition Initialization}%
+\label{ssub:superposition_initialization}
+Recall that for the optimization of $S$, $S$ must be doubly stochastic. When no tokens have been revealed, $S=D$ (from \ref{ssub:zero_line_sum_modified_jacobian}). To work with an arbitrary amount of revealed tokens, $S$ with dimensions $N^2 \times N^2$ is defined as follows:
+\begin{align*}
+S_{i,j}=
+\begin{cases}
+    \frac{1}{N-|R|}& \nexists a\enspace (a,j)\in R \land \nexists b\enspace (i,b)\in R\enspace \text{if neither $i$ or $j$ have been revealed}\\
+    0& \exists a\enspace (a,j)\in R \oplus \exists b\enspace (i,b)\in R\enspace \text{if only one of $i$ or $j$ has been revealed}\\
+    1& \exists a\enspace (a,j)\in R \land \exists b\enspace (i,b)\in R\enspace \text{if $i,j$ is a revealed token}
+\end{cases}
+\end{align*}
 
-\subsubsection{Multi-objective Loss Function}%
-\label{ssub:multi_objective_loss_function}
-Now, we are satisfying multiple objectives: the negative maximum deviation, and the toroidal grid loss too. We can scale these by the losses by arbitrary parameters $\beta$ and $\gamma$
+\begin{proof}
+\emph{upcoming proof of double stochasticity}
+\end{proof}
 
-With all of the steps above, we can now optimize $S$. The procedure used within this essay is as following:\footnote{The procedure is by no means optimal. The purpose of this essay is not to be optimal, but to provide insight on what is possible.}
+The following is the optimization procedure
 \begin{enumerate}
-    \item Randomly initialize $S$ from a Uniform Distribution (equal probabilities for all values) on the interval $[0,1)$
-    \item Repeat until convergence
+    \item Initialize $S$
     \begin{enumerate}
-    \item Sum the Negative Maximum Deviation of all the rows and columns, and the Grid loss
-    \item Calculate the partial derivatives
-    item Perform Gradient Descent
+    \item For every $N$:
+        \begin{enumerate}
+            \item For $n_{optim}$ steps:
+    \begin{enumerate}
+        \item Calculate $J$, ensure ZLS $J'$
+        \item Perform gradient descent update
+        \item Ensure doubly stochastic $S''$
+    \end{enumerate}
+    \item Reveal token
+        \end{enumerate}
     \end{enumerate}
 \end{enumerate}

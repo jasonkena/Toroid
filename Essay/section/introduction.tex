@@ -1,23 +1,17 @@
 \section{Introduction}%
 \label{sec:introduction}
 
-Gradient descent is an iterative algorithm to optimize (to maximize or minimize) a continuous function. It does so by shifting the value of the paramaters in the direction of its gradient with respect to (\wrt{}) the function. In the context of minimization, it is defined as follows
+Gradient descent is an iterative algorithm to optimize\footnote{usually in the context of minimization, hence `descent'} a continuous function. It does so by shifting parameters in the direction of opposite of their gradient with respect to (\wrt{}) the function, that is:
 \begin{align*}
-         \theta'=\theta-\alpha \frac{d}{d\theta}L(\theta)
+         \theta'=\theta-\alpha \frac{d}{d\theta}L(\theta).
 \end{align*}
-where $\theta$ is the paramater to optimize with the goal of minimizing the value of the function $L$. $\alpha$ is a scaling factor representing how far the paramater should shift. This equation can be generalized to optimize many paramaters by utilizing partial derivatives instead. Anyhow, it is obvious why a continuous function is required: gradients are only defined with continuous functions.
+Here, $\theta$ is the parameter to optimize,to minimize the value of function $L$, and $\alpha$ is an arbitrary scaling factor usually called \emph{learning rate}. Gradient descent can be generalized to multi-variable optimization through the use of partial derivatives within Jacobian matrices. Regardless, it self-evident why  continuous functions are required.
 
-The primary goal of this essay is to test whether a discrete loss function and its corresponding discrete paramaters can be generalized to a continuous loss function and continuous paramaters, with the purpose of finding optimum discrete variables. What better demonstration than its application on a difficult challenge? So, I chose to address this problem within the context of a programming contest called ``Reversing Nearness'' held by Al Zimmermann, which traditionally, had been approached with algorithms that do not utilize gradients, such as hill climbing (which modifies each paramater sequentially and keeps changes that optimize the function) and simulated annealing (which is essentially probabilistic hill climbing)\footnote{both of which are beyond the scope of this essay}. But I wanted to do it with gradients! Because what else would my calculus classes be for.
+The primary goal of this essay is to measure the generalization capability of gradient descent, whether a discrete loss function can be generalized to a continuous loss, and therefore whether optimum discrete parameters can be obtained. ``Reversing Nearness'', a programming contest held by Al Zimmermann, proved to be a suitable testbed for this purpose, because traditionally, it had been approached with non-gradient optimization methods, such as hill climbing and simulated annealing, all of which are beyond the scope of this essay. To the best of my knowledge, a gradient based approach has never been attempted on the competition, for good reason: it is a discrete optimization problem. The objective is deceptively simple, given a grid of tokens, ``your task is to rearrange the tokens so that pairs of tokens that are near each other become far from each other and those that are far from each other become near.''\cite{zimmermann} The definitions of ``token'', ``grid'', and distance will be explained within the essay.
 
-The objective of Al Zimmermann's programming contest, is to rearrange discrete tokens within a discrete grid, to minimize the the a loss function which depends on the distances between these tokens on a toroidal surface. The intricacies of this problem are explained within the essay.
+``It will be fun'', I said, after all, are they not the reason for my calculus classes? Hence, my research question: \emph{Is gradient descent a viable approach for \emph{Reversing Nearness}?}
 
-Hence, my research question: \emph{Is gradient descent a viable approach for toroidal grid optimization?}
-
-There are many techniques used within this essay to accomplish this goal. Among them are
 \begin{enumerate}
-  \item Generalization of Euclidean distances to accomodate toroidal surfaces
-  \item Matric permutations to remove duplicate entries
-  \item ``Superposition'' to model discrete tokens being within multiple positions, with their respective ``probabilities''\footnote{Probabilities here does not refer to the chance of a random event occuring, but rather the ``confidence'' in which a token is in its position, or the extent in which the position affects the loss function}
-  \item Enforcement of probabilities (that they should sum to one), using the Sinkhorn-Knopp algorithm\cite{sinkhorn1967concerning}
-  \item Use of Jacobian matrices for gradient descent
+  \item \textbf{Short answer:} Yes
+  \item \textbf{Long answer:}
 \end{enumerate}

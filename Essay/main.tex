@@ -10,6 +10,7 @@
 \usepackage{xparse}
 \usepackage{graphicx}
 \usepackage{bm}
+\usepackage{amsthm}
 %\usepackage{subfig}
 
 \usepackage{alphalph}
@@ -37,8 +38,15 @@
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
 
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}{Definition}
+
+\let\emptyset\varnothing
+
 \input{fig/figures}
-\title{Toroidal Grid Optimization via Gradient Descent}
+\title{\emph{Reversing Nearness} via Gradient Descent}
 \author{Jason Ken A}
 
 \begin{document}
@@ -46,11 +54,11 @@
 \tableofcontents
 
 \include{section/introduction}
-\include{section/problem}
-\include{section/super}
-\include{section/optimization}
-\include{section/discrete}
-\include{section/evaluation}
+\input{section/problem}
+\input{section/super}
+\input{section/optimization}
+%\input{section/discrete}
+\input{section/evaluation}
 \include{section/acknowledgements}
 
 \printbibliography

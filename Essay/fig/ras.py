@@ -35,7 +35,7 @@ if __name__ == "__main__":
     results = []
     for _ in range(num_sample):
         losses = []
-        matrix = torch.rand(n, n)
+        matrix = torch.rand(n, n) * 2 / n
         for _ in range(num_iter):
             losses.append(scaling_loss(matrix).numpy())
             matrix = ras(matrix)

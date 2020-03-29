@@ -4,8 +4,7 @@
 \subsection{Toroidal Grid}%
 \label{sub:toroidal_grid}
 
-
-According to the problem description on AZsPCs,\cite{zimmermann} the initial toroidal grid $O$ is defined as an $N\times N$ grid of unique tokens which ``wrap around'' (implications are addressed in \ref{ssub:distance_metric}). These tokens can be arbitrarily defined, as long as they are unique, but for the sake of simplicity (and for reasons explained in \ref{ssub:distance_metric}), in this essay, a token is of the form by $\bm{IJ}$, where $\bm{I}$ and $\bm{J}$ are alphabetic representations of the indices of the rows and columns respectively, of a token, \emph{within $O$}\footnote{This is important because after rearranging the tokens, the identity of the token depends on its position within $O$, and not the rearranged position}, eg.~$AC$ corresponds to the token in row 1, column 3 of $O$, $DF$ corresponds to the row 4, column 6 of $O$, and so on. For $N=4$, the grid is shown in \autoref{fig:toroidExample}. The tokens outside of the square grid represent tokens which wrap around the edges, resembling a toroidal surface as shown in \autoref{fig:wiki_toroid}.
+As stated on the AZsPCs website,\cite{zimmermann} the initial toroidal grid $O$ is defined as an $N\times N$ grid of unique tokens which ``wrap around'' (addressed in \ref{ssub:distance_metric}). For the sake of simplicity (and for reasons explained in \ref{ssub:distance_metric}), a token is of the form $\bm{IJ}$, where $\bm{I}$ and $\bm{J}$ are alphabetic representations of the indices of the rows and columns respectively, of a token, \emph{within $O$},\footnote{This is important because after rearranging the tokens, the identity of the token depends on its position within $O$, and not the rearranged position} eg.~$AC$ corresponds to the token in row 1, column 3 of $O$, $DF$ corresponds to the row 4, column 6 of $O$, etc. $O$ for $N=4$, is shown in \autoref{fig:toroidExample}. Tokens outside of the square grid represent tokens which ``wrap around'' the edges, resembling a toroidal surface as shown in \autoref{fig:wiki_toroid}.
 \begin{figure}[htpb]
     \begin{subfigure}[t]{0.5\textwidth}
     \begin{center}
@@ -30,32 +29,29 @@ According to the problem description on AZsPCs,\cite{zimmermann} the initial tor
 \subsection{Evaluation Function}%
 \label{sub:evaluation_function}
 
-The goal of the challenge (and hence this essay) is to create a new grid $X$ --- with tokens rearranged arbitrarily from the initial grid $O$ --- which minimizes a loss function which is computed with the following procedure:
+The goal of the challenge (and hence this essay) is to rearrange the tokens within $O$ to form a new grid $X$ that minimizes a loss function computed with the following procedure:
 \begin{enumerate}
     \item For each unique pair of tokens\footnote{Comparisons between a token and itself do not affect the loss, since the distance between them is $0$, therefore, their inclusion or exclusion does not affect the computation} (eg. $[AA,BA]$ is equivalent to $[BA,AA]$, so $[BA,AA]$ is excluded), calculate the squared distance between them in the new grid,
-    \item Multiply each of them with the squared distance between the pair of tokens within the original grid
-    \item The loss is the sum of all of these products
+    \item Multiply each of these by the squared distance between the pair of tokens within the original grid,
+    \item Sum of all of these products
+    \item Subtract a lower-bound corresponding to the value of $N$\footnote{Omitted here for brevity. Can be found at \cite{zimmermann}}
 \end{enumerate}
 
 \subsubsection{Distance Metric}%
 \label{ssub:distance_metric}
-To evaluate the loss function, a distance metric between two tokens must be established. And to do that, we must define the position of a token in a coordinate system. This is where the methodology we used to define the unique tokens comes in handy; the coordinates of the tokens are simply the indices of the token \emph{within the particular grid $X$}. To avoid confusion between whether the rows or columns correspond to the $x$-coordinate or $y$-coordinate, a token within a grid, with indices $(i,j)$ simply has the coordinate $(i,j)$.\footnote{Note that this means we are not adhering to Cartesian coordinates, where the index $(i,j)$ would have the coordinate $(j,i)$.}
+To evaluate the loss function, a distance metric between two tokens must be established, which in turn necessitates defining the position of a token within a coordinate system.
 
-With this definition, we can now define the distance metric. If two two-dimensional coordinates are defined as $s_1=(x_1,y_1)$ and $s_2=(x_2,y_2)$, the Euclidean distance $d_{euclid}$ is defined as
+\emph{The coordinate of a token is defined as the indices of the token within $X$.}
 
+Note that within $O$, the coordinates, indices, and token representations are all equal.
+
+ Let two two-dimensional coordinates $s_1=(x_1,y_1)$ and $s_2=(x_2,y_2)$, then the Euclidean distance $d_{euclid}$ is defined as
 \begin{equation}
     \label{eq:euclid}
-    d_{euclid}(s_1,s_2)=\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}=\sqrt{(\Delta_{euclid} x)^2+(\Delta_{euclid} y)^2}
+    d_{euclid}(s_1,s_2)=\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}=\sqrt{(\Delta_{euclid} x)^2+(\Delta_{euclid} y)^2}.
 \end{equation}
 
-and the squared Euclidean distance $d^2$ evaluates to
-\begin{equation}
-    d_{euclid}^2(s_1,s_2)=(\Delta_{euclid} x)^2+(\Delta_{euclid} y)^2
-    \label{eq:squaredEuclid}
-\end{equation}
-simplifying much of the computation.
-
-But to generalize Euclidean distance to the distance on a toroidal surface, we must consider several implications. First of all, $\Delta x$ or $\Delta y$ can have 2 possible values. Let us first consider the one-dimensional case. A toroidal surface of length $N$ is illustrated in \autoref{fig:2distanceexample}. It can be shown that the corresponding possible values for $\Delta x$ are as follows:
+On a toroidal surface however, $\Delta x$ and $\Delta y$ can each have 2 possible values. A one-dimensional toroidal surface of length $N$ is illustrated in \autoref{fig:2distanceexample}. The corresponding possible values for $\Delta x$ are as follows:
 \begin{align*}
     %\label{eq:naiveToroidDistance}
     \Delta_1(x)&=x_2-x_1 \\
@@ -78,14 +74,13 @@ But to generalize Euclidean distance to the distance on a toroidal surface, we m
     \label{fig:2distanceexample}
 \end{figure}
 
-
-To obtain a general equation which works with both $x_1>x_2$ and $x_1<x_2$ (as we cannot assume $x_1<x_2$), we can write
+To obtain a general equation which is applicable for $x_1>x_2$:
 \begin{align*}
     \Delta_1(x)&=\lvert x_2-x_1 \rvert \\
     \Delta_2(x)&=\min{(x_1,x_2)}+N-\max{(x_1,x_2)}
     %\label{eq:absoluteToroidDistance}
 \end{align*}
-where $\lvert a\rvert$ is the absolute value of $a$, $\min{(a,b)}$ and $\max{(a,b)}$ are defined as the minimum and maximum between the values of $a$ and $b$ respectively. They can be defined with piece-wise functions as follows:
+where $\lvert a\rvert$ is the absolute value of $a$, $\min{(a,b)}$ and $\max{(a,b)}$ are defined as the minimum and maximum between the values of $a$ and $b$ respectively, that is:
 \begin{align*}
         \min{(a,b)}=
         \begin{cases}
@@ -99,14 +94,14 @@ where $\lvert a\rvert$ is the absolute value of $a$, $\min{(a,b)}$ and $\max{(a,
         \end{cases}
     %\label{eq:}
 \end{align*}
-$\min$ and $\max$ are used to determine the  ``left-most'' and the ``right-most'' numbers.
+$\min$ and $\max$ are used to determine the  ``left-most'' and the ``right-most'' coordinates.
 
-Since the distance can only have one value, it is defined as the minimum of the two possible distances:
+One-dimensional toroidal distance is then defined as
 \begin{align*}
-    \Delta x=\min{(\Delta_1(x),\Delta_2(x))}
+    \Delta x=\min{(\Delta_1(x),\Delta_2(x))}.
 \end{align*}
 
-Generalizing it to 2 dimensions, we get
+In two dimensions, the toroidal distance and squared toroidal distance are
 \begin{align*}
     d(s_1,s_2)&=\sqrt{(\Delta x)^2+(\Delta y)^2} \\
     d^2(s_1,s_2)&=(\Delta x)^2+(\Delta y)^2
@@ -115,25 +110,6 @@ From now on, \emph{distance} refers to $d^2$.
 
 \subsubsection{Token Comparisons}%
 \label{ssub:token_comparisons}
-Within this essay, a \emph{comparison} is defined as the distance between two tokens within a toroidal grid $X$. To be able to perform comparisons for every possible pair of tokens, a grid of comparisons on the grid is required. A viable approach would be to represent the comparison in a 4-dimensional grid (or tensor), where every token in the grid (first 2 dimensions), is compared to every token (next 2 dimensions). An example of the structure of the comparison for a $2\times 2$ grid is shown in \autoref{fig:4dcomparison}. The white boxes denote duplicate comparisons (eg. $
-\begin{smallmatrix}
-    BA\\ AA
-\end{smallmatrix}
-$ is identical to
-$
-\begin{smallmatrix}
-    AA\\ BA
-\end{smallmatrix}
-$), because the distance is invariant to the order of the tokens.
-
-We can reduce the complexity\footnote{ie. the number of $\Sigma$s in \ref{ssub:loss_function_as_matrix_multiplications}} of the comparisons by reducing the dimensionality of the grid: from an $N\times N\times N\times N$ grid to a $N^2\times N^2$ grid. The elements within the 4-dimensional matrix are in the form $C_{i,j,k,l}$, and the 2-dimensional grid in the form $C_{m,n}$. To do this conversion,
-\begin{align*}
-    m=(i-1)\times N+j &\implies m\div N=i-1 \text{ remainder } j\\
-    n=(k-1)\times N+l &\implies n\div N=j-1 \text{ remainder } l
-\end{align*}
-$-1$ is to account for the rows index starting at $1$.
-
-Regardless, both represent the same thing: the distance between the tokens $\bm{IJ}$ and $\bm{KL}$. The two-dimensional representation of \autoref{fig:4dcomparison} is shown in \autoref{fig:2dcomparison}. Let $C_{2d}$ denote a function mapping from the input toroidal grid $X$ and returning the 2d-comparison grid $C_{2d}(X)$.
 \begin{figure}[htpb]
     \centering
     \begin{subfigure}[t]{0.5\textwidth}
@@ -152,19 +128,36 @@ Regardless, both represent the same thing: the distance between the tokens $\bm{
     \label{fig:2dcomparison}
     \end{subfigure}
 
-    \caption{Tensors $C(X)$ representing comparison grids of a $2\times 2$ toroidal grid, where every element represents the distance between $X_{ij}$ and $X_{kl}$. Shaded cells denote unique comparisons.}%
+    \caption{Tensors $C(X)$ representing comparison grids of an $N=2$ toroidal grid, where every element represents the distance between $X_{ij}$ and $X_{kl}$. Shaded cells denote unique comparisons.}%
     \label{fig:comparisonGrids}
 \end{figure}
 
+There are multiple ways of representing distances between all possible pairs of tokens, one of which is a 4-dimensional matrix (tensor) where every token within $X$ (first 2 dimensions), is compared to every token (next 2 dimensions). An example of the structure of the comparison for an $N=2$ grid is shown in \autoref{fig:4dcomparison}. The white boxes denote duplicate comparisons (eg. $
+\begin{smallmatrix}
+    BA\\ AA
+\end{smallmatrix}
+$ is identical to
+$
+\begin{smallmatrix}
+    AA\\ BA
+\end{smallmatrix}
+$).
+
+The dimensionality of the grid can be reduced\footnote{ie. to reduce the number of $\Sigma$s in \ref{ssub:loss_function_as_matrix_multiplications}} of the tensor can be reduced into a matrix: from $N\times N\times N\times N$ grid to $N^2\times N^2$, elements within the 4-dimensional tensor are of form $C(X)_{i,j,k,l}$, the 2-dimensional elements of the form $C(X)_{m,n}$. To do this conversion,
+\begin{align*}
+    m=(i-1)\times N+j &\implies m\div N=i-1 \text{ remainder } j\\
+    n=(k-1)\times N+l &\implies n\div N=j-1 \text{ remainder } l
+\end{align*}
+$-1$ is to account for one-based indexing.
+
+Both $C(X)_{i,j,k,l}$ and $C(X)_{m,n}$ represent the distance between tokens $\bm{IJ}$ and $\bm{KL}$ within $X$. The two-dimensional representation of \autoref{fig:4dcomparison} is shown in \autoref{fig:2dcomparison}.
+
+From now on, let $C(X)$ refer to the two dimensional distance matrix.
+
 \subsubsection{Loss Function in Matrix Form}%
 \label{ssub:loss_function_as_matrix_multiplications}
-The loss function for toroidal grid $X$ is equal to
+Therefore the loss function for toroidal grid $X$ is equal to
 \begin{align*}
-    L(X)=\frac{1}{2}\sum_m^{N^2}\sum_n^{N^2}C(X)_{m,n}C(O)_{m,n}
+    L(X)=\frac{1}{2}\sum_m^{N^2}\sum_n^{N^2}C(X)_{m,n}C(O)_{m,n}-c
 \end{align*}
-where $C(X)$ and $C(O)$ are matrices of the form $N^2\times N^2$. Note that the on the diagonal of $C(O)$ and $C(X)$ are comparisons of tokens against themselves, which are all equal to $0$, because the distance between a point and itself is equal to $0$. Therefore, to take into account only the unique comparisons we can simply divide the product between these 2 grids by 2.
-
-\subsubsection{A Comprehensive Example}%
-\label{ssub:a_comprehensive_example}
-
-
+$c$ is the aforementioned lower-bound constant. Note that the diagonals of $C(O)$ and $C(X)$ are 0-valued, because they measure the distance between a token against itself. Therefore, to take into account only the unique distance measurements (ie. shaded cells) the factor of $\frac{1}{2}$ is added.
