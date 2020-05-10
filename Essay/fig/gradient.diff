@@ -1,0 +1,20 @@
+--- gradient.tex	2020-05-09 12:43:44.551865528 +0700
++++ gradient.bak	2020-05-09 12:43:26.015406259 +0700
+@@ -8,7 +8,7 @@
+ axis line style={white},
+ tick align=outside,
+ tick pos=left,
+-title={Gradient Descent},
++title={Gradient Descent on $y=x^3-2x$},
+ x grid style={white},
+ xmajorgrids,
+ xmin=0, xmax=2,
+@@ -121,7 +121,7 @@
+ 1.9797979593277 3.80042004585266
+ 2 4
+ };
+-\addplot [semithick, black, mark=*, mark size=3, mark options={solid}, only marks]
++\addplot [semithick, black, mark=*, mark size=1, mark options={solid}, only marks]
+ table {%
+ 1.79999995231628 2.23199939727783
+ 1.41400003433228 -0.000854015350341797

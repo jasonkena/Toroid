@@ -42,8 +42,6 @@ if __name__ == "__main__":
     ax.plot(x, loss(x))
     ax.plot(*gradient_descent(theta, alpha, n_iter), "k.")
     # ax.set_yscale("log")
-    # ax.set_xlabel("Number of Iterations")
-    # ax.set_ylabel("Squared Error")
     ax.set_title("Gradient Descent")
     ax.grid(True)
     tikzplotlib.save("gradient.tex")

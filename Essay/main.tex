@@ -1,25 +1,44 @@
 %! TEX PROGRAM = pdflatex
-\documentclass[a4paper]{article}
+\documentclass[12pt, a4paper, titlepage]{article}
 
 \usepackage[utf8]{inputenc}
 \usepackage{microtype, listings, amsmath, amssymb, csquotes}
 \allowdisplaybreaks
-\usepackage{tikz}
+\usepackage{pgf,tikz,xcolor}
 \usepackage{pgfplots}
 \usepackage{subcaption}
 \usepackage{xparse}
 \usepackage{graphicx}
 \usepackage{bm}
 \usepackage{amsthm}
+\usepackage{blkarray}
+\usepackage{siunitx}
+\usepackage{appendix}
+\usepackage{setspace}
 %\usepackage{subfig}
 
 \usepackage{alphalph}
+
 \usepackage[hidelinks]{hyperref}
 \usepackage{cleveref}
+%https://tex.stackexchange.com/questions/36575/autorefs-inserted-text-has-not-the-correct-case
+\renewcommand*{\footnoteautorefname}{footnote}
+\renewcommand*{\equationautorefname}{Eq.\@}
+\renewcommand*{\figureautorefname}{Fig.\@}
+\renewcommand*{\sectionautorefname}{section}
+\renewcommand*{\subsectionautorefname}{section}
+\renewcommand*{\subsubsectionautorefname}{section}
+
 \usepackage[margin=1in]{geometry}
 
 \usepackage[style=numeric,sorting=none]{biblatex}
 \addbibresource{main.bib}
+
+\usepackage{setspace}
+\doublespacing
+\setdisplayskipstretch{0.5}
+%Don't affect arrays
+\renewcommand{\arraystretch}{0.6}
 
 \hypersetup{
     colorlinks=true,
@@ -34,9 +53,25 @@
   {\left(\begin{smallmatrix}}
   {\end{smallmatrix}\right)}
 
-\newcommand{\wrt}{w.r.t.}
+%https://tex.stackexchange.com/questions/542964/highlighting-subscripts-superscripts-in-math-mode
+\newcommand{\highlight}[2][red!50]{\mathpalette{\highlightwithstyle[#1]}{#2}}
+\newcommand{\highlightwithstyle}[3][red!50]{
+  \begingroup                         %% <- limit scope of \box0 and \fboxsep assignment
+    \sbox0{$\mathsurround 0pt #2#3$}% %% <- typeset content in box 0
+    \setlength{\fboxsep}{.5pt}        %% <- set (smaller) framebox margins
+    \sbox2{\hspace{-.5pt}%            %% <- create box 2, undo margin
+      \colorbox{#1}{\usebox0}%        %% <- print the contents of box 0 in a \colorbox
+    }%
+    \dp2=\dp0 \ht2=\ht0 \wd2=\wd0     %% <- set dimensions of box 2 to match box 0
+    \box2                             %% <- print box 2
+  \endgroup                           %% <- revert old definitions of the boxes and \fboxsep
+}
+
+\newcommand{\wrt}{w.r.t.\@}
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator{\ras}{RAS}
+\newcommand\Alpha{\mathrm{A}}
 
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{corollary}{Corollary}[theorem]
@@ -47,11 +82,16 @@
 
 \input{fig/figures}
 \title{\emph{Reversing Nearness} via Gradient Descent}
-\author{Jason Ken A}
+\date{
+\parbox{\linewidth}{\centering%
+  \today\endgraf\bigskip
+\textbf{Mathematics}\\\emph{Is gradient descent a viable approach for Reversing Nearness?}\\Word Count: 3934}}
 
 \begin{document}
 \maketitle
+\begin{onehalfspace}
 \tableofcontents
+\end{onehalfspace}
 
 \include{section/introduction}
 \input{section/problem}
@@ -59,7 +99,9 @@
 \input{section/optimization}
 %\input{section/discrete}
 \input{section/evaluation}
-\include{section/acknowledgements}
+%\include{section/acknowledgements}
 
 \printbibliography
+\appendix
+\input{section/appendices}
 \end{document}

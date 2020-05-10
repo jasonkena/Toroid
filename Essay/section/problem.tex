@@ -4,7 +4,7 @@
 \subsection{Toroidal Grid}%
 \label{sub:toroidal_grid}
 
-As stated on the AZsPCs website,\cite{zimmermann} the initial toroidal grid $O$ is defined as an $N\times N$ grid of unique tokens which ``wrap around'' (addressed in \ref{ssub:distance_metric}). For the sake of simplicity (and for reasons explained in \ref{ssub:distance_metric}), a token is of the form $\bm{IJ}$, where $\bm{I}$ and $\bm{J}$ are alphabetic representations of the indices of the rows and columns respectively, of a token, \emph{within $O$},\footnote{This is important because after rearranging the tokens, the identity of the token depends on its position within $O$, and not the rearranged position} eg.~$AC$ corresponds to the token in row 1, column 3 of $O$, $DF$ corresponds to the row 4, column 6 of $O$, etc. $O$ for $N=4$, is shown in \autoref{fig:toroidExample}. Tokens outside of the square grid represent tokens which ``wrap around'' the edges, resembling a toroidal surface as shown in \autoref{fig:wiki_toroid}.
+As per AZsPCs\cite{zimmermann} specifications, the initial toroidal grid $O$ is defined as an $N\times N$ grid of unique tokens which ``wrap around'' the edges. A token is of the form $\bm{IJ}$, where $\bm{I}$ and $\bm{J}$ are alphabetic representations of the indices of the rows and columns respectively, of a token, \emph{within $O$},\footnote{This is important because after rearranging the tokens, the identity of the token depends on its position within $O$, and not the rearranged position} e.g., $AC$ corresponds to the token in row 1, column 3 of $O$, $DF$ corresponds to the row 4, column 6 of $O$, etc. \autoref{fig:toroidExample} shows $O$ for $N=4$. Tokens outside of the square grid represent tokens ``wrapping around'' the edges, resembling a toroidal surface as shown in \autoref{fig:wiki_toroid}.
 \begin{figure}[htpb]
     \begin{subfigure}[t]{0.5\textwidth}
     \begin{center}
@@ -25,40 +25,35 @@ As stated on the AZsPCs website,\cite{zimmermann} the initial toroidal grid $O$ 
     \caption{Representations of a toroidal grid}
 \end{figure}
 
-
 \subsection{Evaluation Function}%
 \label{sub:evaluation_function}
 
-The goal of the challenge (and hence this essay) is to rearrange the tokens within $O$ to form a new grid $X$ that minimizes a loss function computed with the following procedure:
+The goal of the challenge is to rearrange the tokens within $O$ to form a new grid $X$ that minimizes a loss function computed with the following procedure:
 \begin{enumerate}
-    \item For each unique pair of tokens\footnote{Comparisons between a token and itself do not affect the loss, since the distance between them is $0$, therefore, their inclusion or exclusion does not affect the computation} (eg. $[AA,BA]$ is equivalent to $[BA,AA]$, so $[BA,AA]$ is excluded), calculate the squared distance between them in the new grid,
-    \item Multiply each of these by the squared distance between the pair of tokens within the original grid,
-    \item Sum of all of these products
-    \item Subtract a lower-bound corresponding to the value of $N$\footnote{Omitted here for brevity. Can be found at \cite{zimmermann}}
+    \item For each unique pair of tokens (e.g., $[AA,BA]$ is equivalent to $[BA,AA]$, so $[BA,AA]$ is omitted), calculate the squared distance between them in $X$,
+    \item Multiply each of these by the squared distance between the pair of tokens within $O$,
+    \item Sum all of these products,
+    \item Subtract a lower-bound corresponding to the value of $N$ (\autoref{sec:lower_bound_constants})
 \end{enumerate}
 
-\subsubsection{Distance Metric}%
-\label{ssub:distance_metric}
-To evaluate the loss function, a distance metric between two tokens must be established, which in turn necessitates defining the position of a token within a coordinate system.
+\subsection{Distance Metric}%
+\label{sub:distance_metric}
+To evaluate the loss function, a distance metric between two tokens must be established, which necessitates a coordinate system. Here, \emph{the coordinate of a token is defined as the indices of the token within $X$} i.e., any token within row 5, column 3 of $X$, has coordinates $(5,3)$. Note that within $O$, coordinates, indices, and token representations are all equivalent.
 
-\emph{The coordinate of a token is defined as the indices of the token within $X$.}
-
-Note that within $O$, the coordinates, indices, and token representations are all equal.
-
- Let two two-dimensional coordinates $s_1=(x_1,y_1)$ and $s_2=(x_2,y_2)$, then the Euclidean distance $d_{euclid}$ is defined as
-\begin{equation}
+ Let two two-dimensional coordinates be $s_1=(x_1,y_1)$ and $s_2=(x_2,y_2)$. The Euclidean distance $d_{euclid}$ is defined as,%
+\begin{align}
     \label{eq:euclid}
-    d_{euclid}(s_1,s_2)=\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}=\sqrt{(\Delta_{euclid} x)^2+(\Delta_{euclid} y)^2}.
-\end{equation}
+    d_{euclid}(s_1,s_2)=\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}=\sqrt{(\Delta_{euclid} x)^2+(\Delta_{euclid} y)^2}
+\end{align}
 
-On a toroidal surface however, $\Delta x$ and $\Delta y$ can each have 2 possible values. A one-dimensional toroidal surface of length $N$ is illustrated in \autoref{fig:2distanceexample}. The corresponding possible values for $\Delta x$ are as follows:
-\begin{align*}
-    %\label{eq:naiveToroidDistance}
-    \Delta_1(x)&=x_2-x_1 \\
+On a toroidal surface however, $\Delta x$ and $\Delta y$ can each have 2 possible values. A one-dimensional toroidal surface of length $N$ is illustrated in \autoref{fig:2distanceexample}. The corresponding possible values for $\Delta x$ are as follows,%
+\begin{align}
+    \Delta_1(x)&=x_2-x_1\nonumber\\
     \Delta_2(x)&=(x_1-0)+(N-x_2)=x_1+N-x_2
-\end{align*}
+    \label{eq:naiveToroidDistance}
+\end{align}
 
-\begin{figure}[tpb]
+\begin{figure}[htpb]
     \centering
     \begin{tikzpicture}
         \draw[latex-latex] (-3,0) -- (3,0);
@@ -74,49 +69,59 @@ On a toroidal surface however, $\Delta x$ and $\Delta y$ can each have 2 possibl
     \label{fig:2distanceexample}
 \end{figure}
 
-To obtain a general equation which is applicable for $x_1>x_2$:
-\begin{align*}
-    \Delta_1(x)&=\lvert x_2-x_1 \rvert \\
+To obtain a general equation that works when $x_1>x_2$:%
+\begin{align}
+    \Delta_1(x)&=\lvert x_2-x_1 \rvert\nonumber\\
     \Delta_2(x)&=\min{(x_1,x_2)}+N-\max{(x_1,x_2)}
     %\label{eq:absoluteToroidDistance}
-\end{align*}
-where $\lvert a\rvert$ is the absolute value of $a$, $\min{(a,b)}$ and $\max{(a,b)}$ are defined as the minimum and maximum between the values of $a$ and $b$ respectively, that is:
-\begin{align*}
+\end{align}
+where $\lvert a\rvert$ is the absolute value of $a$, $\min{(a,b)}$ and $\max{(a,b)}$ are defined as the minimum and maximum between the values of $a$ and $b$ respectively, that is,%
+\begin{align}
         \min{(a,b)}=
         \begin{cases}
-            a&\text{if $a\leq b$}\\
-            b&\text{if $a>b$}\\
+            a,&\text{if $a\leq b$}\\
+            b,&\text{if $a>b$}
         \end{cases}\qquad
         \max{(a,b)}=
         \begin{cases}
-            a&\text{if $a\geq b$}\\
-            b&\text{if $a<b$}\\
+            a,&\text{if $a\geq b$}\\
+            b,&\text{if $a<b$}
         \end{cases}
-    %\label{eq:}
-\end{align*}
+\end{align}
 $\min$ and $\max$ are used to determine the  ``left-most'' and the ``right-most'' coordinates.
 
-One-dimensional toroidal distance is then defined as
-\begin{align*}
-    \Delta x=\min{(\Delta_1(x),\Delta_2(x))}.
-\end{align*}
+One-dimensional toroidal distance is then defined as%
+\begin{align}
+    \Delta x=\min{(\Delta_1(x),\Delta_2(x))}
+\end{align}
 
-In two dimensions, the toroidal distance and squared toroidal distance are
-\begin{align*}
-    d(s_1,s_2)&=\sqrt{(\Delta x)^2+(\Delta y)^2} \\
+And in two dimensions, the toroidal distance and squared toroidal distance are%
+\begin{align}
+    d(s_1,s_2)&=\sqrt{(\Delta x)^2+(\Delta y)^2}\nonumber\\
     d^2(s_1,s_2)&=(\Delta x)^2+(\Delta y)^2
-\end{align*}
+\end{align}
 From now on, \emph{distance} refers to $d^2$.
 
-\subsubsection{Token Comparisons}%
-\label{ssub:token_comparisons}
+For example, the distance between $s_1=(1,4),s_2=(2,1)$ and $N=5$ is calculated as follows:%
+\begin{align}
+    \Delta_1(x)&=\lvert 2-1\rvert=1\nonumber\\
+    \Delta_2(x)&=\min{(1,2)}+5-\max{(1,2)}=1+5-2=4\nonumber\\
+    \Delta_1(y)&=\lvert 1-4\rvert=3\nonumber\\
+    \Delta_2(y)&=\min{(4,1)}+5-\max{(4,1)}=1+5-4=2\nonumber\\
+    \Delta(x)&=\min{(1,4)}=1\nonumber\\
+    \Delta(y)&=\min{(3,2)}=2\nonumber\\
+    d^2(s_1,s_2)&=1^2+2^2=5
+\end{align}
+
+\subsection{Token Comparisons}%
+\label{sub:token_comparisons}
 \begin{figure}[htpb]
     \centering
     \begin{subfigure}[t]{0.5\textwidth}
     \begin{center}
     \nestedToroid{2}
     \end{center}
-    \caption{4-dimensional comparison with elements in the form $C(X)_{i,j,k,l}$}
+    \caption{}
     \label{fig:4dcomparison}
     \end{subfigure}%
     ~
@@ -124,40 +129,132 @@ From now on, \emph{distance} refers to $d^2$.
     \begin{center}
     \twodcomparison{2}
     \end{center}
-    \caption{2-dimensional comparison with elements in the form $C(X)_{m,n}$}
+    \caption{}
     \label{fig:2dcomparison}
     \end{subfigure}
 
-    \caption{Tensors $C(X)$ representing comparison grids of an $N=2$ toroidal grid, where every element represents the distance between $X_{ij}$ and $X_{kl}$. Shaded cells denote unique comparisons.}%
+    \caption{Tensors $C(X)$ in the forms $C(X)_{i,j,k,l}$ and $C(X)_{m,n}$ respectively, representing comparison grids of an $N=2$ toroidal grid, where every element represents the distance between tokens $\bm{IJ}$ and $\bm{KL}$ within $X$. Shaded cells denote unique comparisons.}%
     \label{fig:comparisonGrids}
 \end{figure}
 
-There are multiple ways of representing distances between all possible pairs of tokens, one of which is a 4-dimensional matrix (tensor) where every token within $X$ (first 2 dimensions), is compared to every token (next 2 dimensions). An example of the structure of the comparison for an $N=2$ grid is shown in \autoref{fig:4dcomparison}. The white boxes denote duplicate comparisons (eg. $
-\begin{smallmatrix}
-    BA\\ AA
+In order to compute distances between all possible pairs, a corresponding representation is required, i.e., a 4-dimensional matrix (or tensor) with elements being distances between \emph{source} tokens (first 2 dimensions) and \emph{target} tokens (next 2 dimensions). An example of the structure of the comparison for an $N=2$ grid is shown in \autoref{fig:4dcomparison}.
+
+\begin{figure}[htpb]
+    \centering
+    \flatten{3}
+    \caption{Matrix-flattening}%
+    \label{fig:matrix_flattening}
+\end{figure}
+The dimensionality of the grid can be reduced from a tensor into a matrix, to reduce complexity (e.g., number of $\Sigma$s in \ref{sub:loss_function_as_matrix_multiplications}) by applying the matrix-flattening scheme in \autoref{fig:matrix_flattening} twice, on the source and target dimensions, reducing $C(X)$ from $N\times N\times N\times N$ to $N^2\times N^2$. Elements within the 4-dimensional tensor are of form $C(X)_{i,j,k,l}$, whereas the 2-dimensional elements are of form $C(X)_{m,n}$. To do this conversion,%
+\begin{align}
+    m=(i-1)\times N+j &\implies m\div N=i-1 \text{ remainder } j\nonumber\\
+    n=(k-1)\times N+l &\implies n\div N=j-1 \text{ remainder } l
+    \label{eq:flattening_scheme}
+\end{align}
+\autoref{eq:flattening_scheme} can be understood by realizing that $A_{2,3}$ (\autoref{fig:matrix_flattening}) is offset by $(2-1)$ groups of 3 and an additional 3 after flattening.
+
+Note that both $C(X)_{i,j,k,l}$ and $C(X)_{m,n}$ represent the distance between tokens $\bm{IJ}$ and $\bm{KL}$ within $X$ as defined within \autoref{sub:distance_metric}, the difference lies only within their dimensionality. The two-dimensional representation of \autoref{fig:4dcomparison} is shown in \autoref{fig:2dcomparison}.
+
+From now on, let $C(X)$ refer to the two dimensional comparison grid. Examples are shown in \autoref{fig:comparisonExample}.
+
+\begin{figure}[htpb]
+    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{center}
+\drawGrid{2}{{AA,AB,BA,BB}}
+    \end{center}
+    \caption{$O$}
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{center}
+        \begin{align*}
+            \begin{blockarray}{ccccc}
+            &AA & AB & BA & BB \\
+            \begin{block}{c[cccc]}
+                AA&0&1&1&2\\
+                AB&1&0&2&1\\
+                BA&1&2&0&1\\
+                BB&2&1&1&0\\
+            \end{block}
+            \end{blockarray}
+        \end{align*}
+    \end{center}
+    %\vspace{-\baselineskip}
+    \caption{$C(O)$}
+    \label{fig:c_o}
+    \end{subfigure}
+    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{center}
+\drawGrid{2}{{AA,AB,BB,BA}}
+    \end{center}
+    \caption{An example toroidal grid $X$}
+    \end{subfigure}%
+    \begin{subfigure}[b]{0.5\textwidth}
+    \begin{center}
+        \begin{align*}
+            \begin{blockarray}{ccccc}
+            &AA & AB & BA & BB \\
+            \begin{block}{c[cccc]}
+                AA&0&1&2&1\\
+                AB&1&0&1&2\\
+                BA&2&1&0&1\\
+                BB&1&2&1&0\\
+            \end{block}
+            \end{blockarray}
+        \end{align*}
+    \end{center}
+    \vspace{-\baselineskip}
+    \caption{$C(X)$}
+    \end{subfigure}
+    \caption{Example toroidal grids and comparison grids}
+    \label{fig:comparisonExample}
+\end{figure}
+
+\subsection{Loss Function in Matrix Form}%
+\label{sub:loss_function_as_matrix_multiplications}
+The computation of products of only unique comparisons is greatly simplified due to the 2-dimensional representation (\autoref{fig:2dcomparison}) of $C(X)$, which is symmetric along the main diagonal i.e., unique comparisons (shaded cells) along the upper triangle are mirrored along the lower triangle i.e., %
+$\begin{smallmatrix}
+    AA\\ AB
 \end{smallmatrix}
-$ is identical to
+$ is mirrored by
 $
 \begin{smallmatrix}
-    AA\\ BA
+    AB\\ AA
 \end{smallmatrix}
-$).
+$. Also, the elements of $C(O)$ and $C(X)$ are zero-valued along the diagonal (i.e., not contributing to the loss function) due to the distance between a point and itself being $0$. Therefore, to calculate the loss function a simple factor of $\frac{1}{2}$ can be added, and the loss of $X$, $L(X)$ can be written as:
+\begin{align}
+    L(X)&=\frac{1}{2}\sum_m^{N^2}\sum_n^{N^2}C(X)_{m,n}C(O)_{m,n}-c\nonumber\\
+        &=\frac{1}{2}\sum_m^{N^2}\sum_n^{N^2}(C(X)\odot C(O))_{m,n}-c
+\end{align}
+Where $(\odot)$ denotes element-wise multiplication, that is\footnote{every element within $C$ is equal to the product of the elements of $A$ and $B$ within that position}
+\begin{align}
+    C=A\odot B \implies C_{i,j}=A_{i,j}B_{i,j}\;\forall i,j
+\end{align}
 
-The dimensionality of the grid can be reduced\footnote{ie. to reduce the number of $\Sigma$s in \ref{ssub:loss_function_as_matrix_multiplications}} of the tensor can be reduced into a matrix: from $N\times N\times N\times N$ grid to $N^2\times N^2$, elements within the 4-dimensional tensor are of form $C(X)_{i,j,k,l}$, the 2-dimensional elements of the form $C(X)_{m,n}$. To do this conversion,
-\begin{align*}
-    m=(i-1)\times N+j &\implies m\div N=i-1 \text{ remainder } j\\
-    n=(k-1)\times N+l &\implies n\div N=j-1 \text{ remainder } l
-\end{align*}
-$-1$ is to account for one-based indexing.
-
-Both $C(X)_{i,j,k,l}$ and $C(X)_{m,n}$ represent the distance between tokens $\bm{IJ}$ and $\bm{KL}$ within $X$. The two-dimensional representation of \autoref{fig:4dcomparison} is shown in \autoref{fig:2dcomparison}.
-
-From now on, let $C(X)$ refer to the two dimensional distance matrix.
-
-\subsubsection{Loss Function in Matrix Form}%
-\label{ssub:loss_function_as_matrix_multiplications}
-Therefore the loss function for toroidal grid $X$ is equal to
-\begin{align*}
-    L(X)=\frac{1}{2}\sum_m^{N^2}\sum_n^{N^2}C(X)_{m,n}C(O)_{m,n}-c
-\end{align*}
-$c$ is the aforementioned lower-bound constant. Note that the diagonals of $C(O)$ and $C(X)$ are 0-valued, because they measure the distance between a token against itself. Therefore, to take into account only the unique distance measurements (ie. shaded cells) the factor of $\frac{1}{2}$ is added.
+The loss function for \autoref{fig:comparisonExample} is computed as follows:
+\begin{align}
+    L(X)&=\frac{1}{2}\sum_m^{N^2}\sum_n^{N^2}(C(X)\odot C(O))_{m,n}-c\nonumber\\
+        &=\frac{1}{2}\sum_m^{N^2}\sum_n^{N^2}
+        \left(\begin{bmatrix}
+        0&1&2&1\\
+        1&0&1&2\\
+        2&1&0&1\\
+        1&2&1&0
+    \end{bmatrix}\odot
+    \begin{bmatrix}
+        0&1&1&2\\
+        1&0&2&1\\
+        1&2&0&1\\
+        2&1&1&0\\
+    \end{bmatrix}\right)_{m,n}-c\nonumber\\
+        &=\frac{1}{2}\sum_m^{N^2}\sum_n^{N^2}
+\begin{bmatrix}
+    0&1&2&2\\
+    1&0&2&2\\
+    2&2&0&1\\
+    2&2&1&0
+\end{bmatrix}_{m,n}
+        -c\nonumber\\
+        &=\frac{1}{2}\cdot 20-c\nonumber\\
+        &=10-c
+        \label{eq:discrete_example}
+\end{align}

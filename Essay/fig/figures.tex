@@ -1,11 +1,37 @@
-%was node [circle,draw=black,inner sep=0pt,minimum size={width("AAA")}] {\AlphAlph{\x}\AlphAlph{\y}};}}
+%was node [circle,draw=black,inner sep=0pt,minimum size={width("AAA")}] {\makeAlph{\x}\makeAlph{\y}};}}
 % was [square,draw=black]
 \tikzset{square/.style={rectangle,inner sep=0pt,minimum size=1cm}}
+
+%\newcommand{\makeAlph}[1]{\symbol{\numexpr64+#1}}
+%Only AlphAlph works, idk why
+\newcommand{\makeAlph}[1]{\AlphAlph{#1}}
+%\newcommand{\undoAlph}[1]{\numexpr`#1-`A\relax}
+\newcommand{\undoAlph}[1]{\numexpr`#1-`A+1}
+
+\providecommand{\flatten}[1]{
+    \scalebox{0.8}{
+    \begin{tikzpicture}
+    %\draw[shift={(-0.5,0.5)}] (1,-1) grid (#1+1,-#1-1);
+    %\draw[shift={(-0.5,0.5)}] (2*#1,-#1/2-0.5) grid +(#1*#1,-1);
+        \foreach \x in {1,...,#1} {
+            \foreach \y in {1,...,#1} {
+                \pgfmathsetmacro\result{int((\y-1)*100/(#1-1))}
+                \pgfmathsetmacro\counter{int((\y-1)*#1+\x)}
+                \pgfmathsetmacro\updown{mod(\counter,2)}
+            \node[square,draw=black,fill=gray!\result] at (\x,-\y) {$A_{\y\x}$};
+                \node[square,draw=black,fill=gray!\result] at (#1+\y*#1+\x,-#1/2-0.5) {$A_{\y\x}$};
+                \node at (#1+\y*#1+\x,-#1/2+0.5) {\counter};
+        }}
+        \draw[->,very thick] (#1+0.5+0.25,-#1/2-0.5) -- (2*#1+0.5-0.25,-#1/2-0.5);
+
+    \end{tikzpicture}
+}}
+
 \providecommand{\toroid}[1]{
     \draw[shift={(-0.5,0.5)}] (1,-1) grid (#1+1,-#1-1);
         \foreach \x in {1,...,#1} {
             \foreach \y in {1,...,#1} {
-                \node at (\x,-\y) {\AlphAlph{\y}\AlphAlph{\x}};}}
+                \node at (\x,-\y) {\makeAlph{\y}\makeAlph{\x}};}}
 }
 \providecommand{\superToroid}[4]{
     \IfBooleanTF#1{\providecommand{\shading}{white}}{\providecommand{\shading}{gray}}
@@ -19,19 +45,19 @@
         \else
         \providecommand{\param}{\shading}
         \fi
-\node[square,draw=black,fill=\param] at (\x,-\y)[align=center] {\AlphAlph{#4}\AlphAlph{#3}\\ \AlphAlph{\y}\AlphAlph{\x}};}}
+\node[square,draw=black,fill=\param] at (\x,-\y)[align=center] {\makeAlph{#4}\makeAlph{#3}\\ \makeAlph{\y}\makeAlph{\x}};}}
 }
 \providecommand{\toroidWarp}[1]{
     \scalebox{0.8}{
     \begin{tikzpicture}
         \toroid{#1}
         \foreach \x in {1,...,#1} {
-            \node at (\x,0) {\AlphAlph{#1}\AlphAlph{\x}};
-            \node at (\x,-#1-1) {\AlphAlph{#1}\AlphAlph{\x}};
+            \node at (\x,0) {\makeAlph{#1}\makeAlph{\x}};
+            \node at (\x,-#1-1) {\makeAlph{#1}\makeAlph{\x}};
         }
         \foreach \y in {1,...,#1} {
-            \node at (0,-\y) {\AlphAlph{\y}\AlphAlph{#1}};
-            \node at (#1+1,-\y) {\AlphAlph{\y}\AlphAlph{1}};
+            \node at (0,-\y) {\makeAlph{\y}\makeAlph{#1}};
+            \node at (#1+1,-\y) {\makeAlph{\y}\makeAlph{1}};
         }
     \end{tikzpicture}
 }}
@@ -39,10 +65,10 @@
 \providecommand{\toroidAxes}[4]{
     \superToroid{#1}{#2}{#3}{#4}
         \foreach \x in {1,...,#2} {
-            \node at (\x,0) {\AlphAlph{\x}};
+            \node at (\x,0) {\makeAlph{\x}};
         }
         \foreach \y in {1,...,#2} {
-            \node at (0,-\y) {\AlphAlph{\y}};
+            \node at (0,-\y) {\makeAlph{\y}};
         }
 }
 
@@ -52,10 +78,10 @@
         \begin{scope}[scale=1]
             \draw[shift={(-0.5,0.5)}] (1,-1) grid (#2+1,-#2-1);
             \foreach \x in {1,...,#2} {
-                \node at (\x,-0.25) {\AlphAlph{\x}};
+                \node at (\x,-0.25) {\makeAlph{\x}};
             }
             \foreach \y in {1,...,#2} {
-                \node at (0.25,-\y) {\AlphAlph{\y}};
+                \node at (0.25,-\y) {\makeAlph{\y}};
             }
             \foreach \xa in {1,...,#2} {
                 \foreach \ya in {1,...,#2} {
@@ -76,11 +102,11 @@
         %\draw[shift={(-0.5,0.5)}] (0,0) grid ({(#2^2)},{-(#2^2)});
         \foreach \x in {1,...,#2} {
             \foreach \xa in {1,...,#2} {
-                \node at ({(\x-1)*#2+(\xa-1)},1) {\AlphAlph{\x}\AlphAlph{\xa}};
+                \node at ({(\x-1)*#2+(\xa-1)},1) {\makeAlph{\x}\makeAlph{\xa}};
         }}
         \foreach \y in {1,...,#2} {
             \foreach \ya in {1,...,#2} {
-                \node at (-1,{-((\y-1)*#2+(\ya-1))}) {\AlphAlph{\y}\AlphAlph{\ya}};
+                \node at (-1,{-((\y-1)*#2+(\ya-1))}) {\makeAlph{\y}\makeAlph{\ya}};
         }}
         \foreach \xa in {1,...,#2} {
             \foreach \ya in {1,...,#2} {
@@ -95,7 +121,7 @@
         \else
         \providecommand{\param}{\shading}
         \fi
-\node[square,draw=black,fill=\param] at (\xpos,-\ypos)[align=center] {\AlphAlph{\xb}\AlphAlph{\yb}\\ \AlphAlph{\xa}\AlphAlph{\ya}};}}
+\node[square,draw=black,fill=\param] at (\xpos,-\ypos)[align=center] {\makeAlph{\xb}\makeAlph{\yb}\\ \makeAlph{\xa}\makeAlph{\ya}};}}
             }
         }
 \end{tikzpicture}
@@ -118,11 +144,11 @@
         %\draw[shift={(-0.5,0.5)}] (0,0) grid ({(#2^2)},{-(#2^2)});
         \foreach \x in {1,...,#1} {
             \foreach \xa in {1,...,#1} {
-                \node at ({(\x-1)*#1+(\xa-1)},1) {\AlphAlph{\x}\AlphAlph{\xa}};
+                \node at ({(\x-1)*#1+(\xa-1)},1) {\makeAlph{\x}\makeAlph{\xa}};
         }}
         \foreach \y in {1,...,#1} {
             \foreach \ya in {1,...,#1} {
-                \node at (-1,{-((\y-1)*#1+(\ya-1))}) {\AlphAlph{\y}\AlphAlph{\ya}};
+                \node at (-1,{-((\y-1)*#1+(\ya-1))}) {\makeAlph{\y}\makeAlph{\ya}};
         }}
         \foreach \xa in {1,...,#1} {
             \foreach \ya in {1,...,#1} {
@@ -130,10 +156,10 @@
                 \foreach \yb in {1,...,#1} {
                 \pgfmathtruncatemacro{\xpos}{(\xa-1)*#1+(\ya-1)}
                 \pgfmathtruncatemacro{\ypos}{((\xb-1)*#1+(\yb-1))}
-            \str_if_eq:eeTF {\AlphAlph{\xb}\AlphAlph{\yb}} {\clist_item:nn {#2}{(\xa-1)*#1+\ya}}
+            \str_if_eq:eeTF {\makeAlph{\xb}\makeAlph{\yb}} {\clist_item:nn {#2}{(\xa-1)*#1+\ya}}
             {\providecommand{\param}{gray}}
             {\providecommand{\param}{white}}
-\node[square,draw=black,fill=\param] at (\xpos,-\ypos)[align=center] {\AlphAlph{\xb}\AlphAlph{\yb}\\ \AlphAlph{\xa}\AlphAlph{\ya}};}}
+\node[square,draw=black,fill=\param] at (\xpos,-\ypos)[align=center] {\makeAlph{\xb}\makeAlph{\yb}\\ \makeAlph{\xa}\makeAlph{\ya}};}}
             }
         }
 \end{tikzpicture}

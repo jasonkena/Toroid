@@ -1,0 +1,16 @@
+--- loss.bak	2020-05-10 20:32:55.754591376 +0700
++++ loss.tex	2020-05-10 20:33:19.014401145 +0700
+@@ -15,11 +15,13 @@
+ title={Loss over Iterations},
+ x grid style={white},
+ xlabel={Number of Iterations},
++xlabel near ticks,
+ xmajorgrids,
+ xmin=-24, xmax=504,
+ xtick style={color=white!33.3333333333333!black},
+ y grid style={white},
+ ylabel={Loss},
++ylabel near ticks,
+ ymajorgrids,
+ ymin=2678750.65, ymax=2967662.35,
+ ytick style={color=white!33.3333333333333!black}

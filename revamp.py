@@ -542,7 +542,8 @@ if __name__ == "__main__":
     grid = Grid(size)
     # Perform optimization
     discrete_loss = grid.forward(args.n_optim, args.n_ras)
-
+    with open("results","a") as file:
+        file.write(f"{args.size} {args.n_optim} {args.n_ras} "+str(discrete_loss.item())+"\n")
     # Log results
     writer.add_hparams(
         {"size": args.size, "n_optim": args.n_optim, "n_ras": args.n_ras},

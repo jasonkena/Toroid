@@ -1,0 +1,16 @@
+--- ras.bak	2020-05-10 20:33:44.104195954 +0700
++++ ras.tex	2020-05-10 20:33:57.720751258 +0700
+@@ -15,11 +15,13 @@
+ title={Squared Error vs Number of Iterations},
+ x grid style={white},
+ xlabel={Number of Iterations},
++xlabel near ticks,
+ xmajorgrids,
+ xmin=-0.45, xmax=9.45,
+ xtick style={color=white!33.3333333333333!black},
+ y grid style={white},
+ ylabel={Squared Error},
++ylabel near ticks,
+ ymajorgrids,
+ ymin=2.71273553797183e-13, ymax=2.77667975831396,
+ ymode=log,

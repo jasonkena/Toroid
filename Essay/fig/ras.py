@@ -29,7 +29,7 @@ def scaling_loss(matrix):
 
 
 if __name__ == "__main__":
-    num_iter = 100
+    num_iter = 10
     num_sample = 5
     n = 100
     results = []
@@ -41,7 +41,7 @@ if __name__ == "__main__":
             matrix = ras(matrix)
         results.append(np.array(losses))
     results = np.array(results)
-    X = np.arange(n)
+    X = np.arange(num_iter)
 
     plt.style.use("ggplot")
     fig = plt.figure()

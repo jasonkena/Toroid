@@ -4,30 +4,106 @@
 \label{sub:graphs_of_loss_over_time}
 \begin{figure}[htpb]
     \centering
-    \includegraphics[width=0.8\linewidth]{images/invloss.png}
-    \caption{Negative of Maximum Deviation vs Iterations}%
-\end{figure}
-\begin{figure}[htpb]
-    \centering
-    \includegraphics[width=0.8\linewidth]{images/gridloss.png}
-    \caption{Superposition Loss vs Iterations}%
-\end{figure}
-\begin{figure}[htpb]
-    \centering
-    \includegraphics[width=0.8\linewidth]{images/real_loss.png}
-    \caption{Discretized Grid Loss vs Iterations}%
+    \input{fig/loss.tex}
+    \caption{Loss over number of gradient descent iterations for $N=11$ for various $n_{optim}$, and $n=5$. \emph{Lower bound constant has not been subtracted yet.}}
+    \label{fig:11_curves}
 \end{figure}
 
-From the following images, we can see that Gradient Descent is in fact viable for Toroidal Grid Optimization \emph{in its continuous representation}, and that its success does not translate well over to the discretized version of the grid. This is reflected by the fact that the discretized loss after the optimization is worse off than it was in the beginning, during random initialization. This reflects a clear discrepancy between continuous and discrete optimization. The non-smoothness of 2 of the graphs can be traced to the non-discrete natures of both of those losses.
+\autoref{fig:11_curves} shows the loss over time for $N=11$ for various $n_{optim}$ with $n=5$ (number of RAS iterations). All of the tested values of $N$ from $[6,30]$ had similar curves. The sharp discontinuities within the curves when $n_{optim}>1$ are attributed to the reinitialization of $S$, after revealing each of the $N^2$ tokens. Furthermore, it can be observed that a higher $n_{optim}$ leads to a lower final loss.
 
-\subsection{Limitations}%
-\label{sub:limitations}
-A multi-objective loss function is difficult to optimize by nature. How much each component affects the overall loss function is to be determined arbitrarily, and these hyper-parameters\footnote{Parameters that cannot be learnt}, have to be tested arbitrarily. In this essay, only a single set of hyperparameters such as learning rate, proportion of negative maximum deviation and toroidal grid loss is used. This essay by no means provides a comprehensive evaluation of the possible optimization strategies, and therefore, may lack to optimize the function because of the wrong tuning of these hyperparameters and not a mistaken problem formulation.
+\subsection{Comparison to State of the Art}%
+\label{sub:comparison_to_state_of_the_art}
 
-The second possible reason is that I have not properly enforced the idea of discreteness within the optimization. There are a plentiful amount of methods to attempt this, including the Sinkhorn-Knopp algorithm for doubly stochastic matrices, and normal standard deviation. But through my trials, all of them work just about the same, which does not say a lot.
+\begingroup
+\renewcommand{\arraystretch}{0.7}
+\begin{table}[htpb]
+\begin{center}
+\begin{tabular}{r|l}
+  $N$ & Loss\\\hline
+  6&\num{5\,526}\\
+  7&\num{17\,779}\\
+  8&\num{57\,152}\\
+  9&\num{144\,459}\\
+  10&\num{362\,950}\\
+  11&\num{740\,798}\\
+  12&\num{1\,585\,264}\\
+  13&\num{2\,888\,120}\\
+\end{tabular}
+\begin{tabular}{r|l}
+  $N$ & Loss\\\hline
+  14&\num{5\,457\,848}\\
+  15&\num{9\,164\,700}\\
+  16&\num{15\,891\,088}\\
+  17&\num{25\,152\,826}\\
+  18&\num{40\,901\,354}\\
+  19&\num{61\,784\,724}\\
+  20&\num{95\,115\,180}\\
+  21&\num{138\,133\,813}\\
+\end{tabular}
+\begin{tabular}{r|l}
+  $N$ & Loss\\\hline
+  22&\num{203\,877\,974}\\
+  23&\num{286\,960\,950}\\
+  24&\num{409\,173\,438}\\
+  25&\num{560\,363\,762}\\
+  26&\num{776\,271\,362}\\
+  27&\num{1\,039\,341\,134}\\
+  28&\num{1\,404\,785\,310}\\
+  29&\num{1\,843\,328\,926}\\
+  30&\num{2\,439\,441\,116}
+\end{tabular}
+\end{center}
+\caption{SoTA results on Reversing Nearness obtained from \cite{zimmermann}}
+    \label{tab:sota}
+\end{table}
+\endgroup
 
-\subsection{Summary}%
-\label{sub:summary}
-Gradient descent is truly an amazing optimization algorithm. That is, if your loss function reflects the objective. But in the case of toroidal grid optimization, that does not seem to be the case. The stark difference between the continuous and the discrete nature of the problem of toroidal grid optimization makes gradient descent not a viable choice for this problem, according to the experiments laid out within this essay. But this does not hinder the effectiveness of Gradient Descent, but rather it highlights how it should be used properly. With a continuous objective.
+\begingroup
+\renewcommand{\arraystretch}{0.7}
+\begin{table}[htpb]
+\begin{center}
+\begin{tabular}{r|c|l}
+    $N$ & $n_{optim}$ & Loss\\\hline
+6&4&\num{6\,088}\\
+7&4&\num{19\,050}\\
+8&4&\num{63\,972}\\
+9&4&\num{156\,871}\\
+10&4&\num{408\,960}\\
+11&4&\num{808\,639}\\
+12&4&\num{1\,741\,120}\\
+13&4&\num{3\,081\,512}\\
+\end{tabular}
+\begin{tabular}{r|c|l}
+    $N$ & $n_{optim}$ & Loss\\\hline
+14&4&\num{5\,986\,496}\\
+15&4&\num{9\,860\,722}\\
+16&2&\num{17\,411\,568}\\
+17&2&\num{28\,262\,956}\\
+18&2&\num{44\,567\,096}\\
+19&2&\num{67\,792\,800}\\
+20&2&\num{103\,479\,680}\\
+21&2&\num{147\,573\,376}\\
+\end{tabular}
+\begin{tabular}{r|c|l}
+    $N$ & $n_{optim}$ & Loss\\\hline
+22&2&\num{223\,649\,376}\\
+23&2&\num{308\,724\,928}\\
+24&2&\num{446\,677\,760}\\
+25&2&\num{605\,336\,704}\\
+26&2&\num{840\,422\,400}\\
+27&2&\num{1\,129\,623\,808}\\
+28&2&\num{1\,539\,258\,368}\\
+29&2&\num{2\,009\,468\,416}\\
+30&2&\num{2\,667\,657\,728}\\
+\end{tabular}
+\end{center}
+\caption{Gradient descent results on Reversing Nearness}
+    \label{tab:my_results}
+\end{table}
+\endgroup
 
+The gradient descent results consistently maintained a loss within $13\%$ above SoTA, despite having significantly reduced computation times: $N=30$ with $n_{optim}=2$ took under 15 minutes using a graphical processing unit (GPU). The results here could be improved trivially, by increasing $n_{optim}$ and requiring only more time.
 
+\subsection{Conclusion}%
+\label{sub:conclusion}
+Gradient descent has proved to be a generalizable algorithm, applicable to discrete problems such as Reversing Nearness, by the use of superposition. Furthermore, the computational complexity of gradient descent have proved to be viable for at least up to $N=30$, despite requiring $N^4$ elements in  $S$, a feat of its own.

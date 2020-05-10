@@ -1,15 +1,15 @@
 \section{Introduction}%
 \label{sec:introduction}
 
-Gradient descent is an iterative algorithm to optimize\footnote{usually in the context of minimization, hence `descent'} a continuous function. It does so by shifting parameters in the direction of opposite of their gradient with respect to (\wrt{}) the function, that is:
+Gradient descent is an iterative algorithm to optimize\footnote{usually in the context of minimization, hence `descent'} a continuous function. It does so by shifting parameters in the direction of opposite of their gradients with respect to (\wrt{}) the function, that is:%
 \begin{align*}
-         \theta'=\theta-\alpha \frac{d}{d\theta}L(\theta).
+         \theta'=\theta-\alpha \frac{d}{d\theta}L(\theta)
 \end{align*}
-Here, $\theta$ is the parameter to optimize,to minimize the value of function $L$, and $\alpha$ is an arbitrary scaling factor usually called \emph{learning rate}. Gradient descent can be generalized to multi-variable optimization through the use of partial derivatives within Jacobian matrices. Regardless, it self-evident why  continuous functions are required.
+Where $\theta$ is the parameter to optimize to minimize the value of function $L$, and $\alpha$ is the \emph{learning rate}: an arbitrary scaling factor. Gradient descent can be generalized to multi-variable optimization through the use of partial derivatives within Jacobian matrices. Regardless, it self-evident why continuous functions are required.
 
-The primary goal of this essay is to measure the generalization capability of gradient descent, whether a discrete loss function can be generalized to a continuous loss, and therefore whether optimum discrete parameters can be obtained. ``Reversing Nearness'', a programming contest held by Al Zimmermann, proved to be a suitable testbed for this purpose, because traditionally, it had been approached with non-gradient optimization methods, such as hill climbing and simulated annealing, all of which are beyond the scope of this essay. To the best of my knowledge, a gradient based approach has never been attempted on the competition, for good reason: it is a discrete optimization problem. The objective is deceptively simple, given a grid of tokens, ``your task is to rearrange the tokens so that pairs of tokens that are near each other become far from each other and those that are far from each other become near.''\cite{zimmermann} The definitions of ``token'', ``grid'', and distance will be explained within the essay.
+The primary goal of this essay is to measure how capable gradient descent is within generalization: whether discrete solutions can be obtained for a discrete loss function by generalizing it into continuous spaces. ``Reversing Nearness'', a programming contest held by Al Zimmermann, proved to be suitable for this purpose, because to the best of the author's knowledge, had only been approached with non-gradient optimization techniques, such as hill climbing and simulated annealing.\footnote{beyond the scope of this essay} For good reason, it is a discrete optimization problem. Yet, it has a relatively simple objective function: given a grid of tokens, ``your task is to rearrange the tokens so that pairs of tokens that are near each other become far from each other and those that are far from each other become near.''\cite{zimmermann} The definitions of ``tokens'', ``grids'', and distance will be explained within the essay.
 
-``It will be fun'', I said, after all, are they not the reason for my calculus classes? Hence, my research question: \emph{Is gradient descent a viable approach for \emph{Reversing Nearness}?}
+``It will be fun'', I said, justifying all of my calculus classes. Hence, my research question: \emph{Is gradient descent a viable approach for \emph{Reversing Nearness}?}
 
 \begin{enumerate}
   \item \textbf{Short answer:} Yes

@@ -1,63 +1,66 @@
-
 \section{Superposition}%
 \label{sec:superposition}
-Since the entries into the toroidal grid are discrete (ie. discrete tokens with discrete coordinates), it is not yet possible to apply gradient descent. Therefore, relaxing the constraints to enable ``superposition'' --- here defined as having token \emph{fragments} in multiple positions, each of the fragments having its own \emph{weight} --- is essential. Fragment here refers to a fraction of a token, and weight refers to the fraction of the fraction itself. Inspiration was taken from the field of physics, with electrons quantum superposition, with the position of the electron being represented with a probability density function.\footnote{function of probability over position} This analogy will be taken further within \ref{sub:generalization_to_discrete_solutions}.
+
+\subsection{Definition}%
+\label{sub:superposition_definition}
+Since the entries of the toroidal grid are discrete (i.e., discrete tokens with discrete coordinates), it is not yet possible to apply gradient descent. Therefore, relaxing the constraints to enable ``superposition'' --- here defined as having token \emph{fragments} in multiple positions, each of the fragments having its own \emph{weight} --- is essential. A fragment here refers to a fraction of a token and weight refers to the literal fraction (i.e. numerical value). Inspiration was taken from the field of physics, where the positions of electrons are not indicated by coordinates, but probability density functions,\footnote{probability as a function of position} a concept called \emph{quantum superposition}. This analogy will be taken further within \ref{sub:generalization_to_discrete_solutions}.
+
+%\begin{figure}[htpb]
+    %\centering
+    %\begin{subfigure}[t]{0.5\textwidth}
+    %\begin{center}
+    %\nestedToroid*{2}
+    %\end{center}
+    %\caption{$S_{i,j,k,l}$, a 4-dimensional superposition}
+    %\end{subfigure}%
+    %~
+    %\begin{subfigure}[t]{0.5\textwidth}
+    %\begin{center}
+    %\twodcomparison*{2}
+    %\end{center}
+    %\caption{$S_{m,n}$ a 2-dimensional superposition}
+    %\end{subfigure}
+
+    %\caption{Grids $S$ representing superpositions of an $N=2$ toroidal grid, where every element
+%$\begin{smallmatrix}IJ\\KL\end{smallmatrix}$%
+    %represents the probability of the token $KL$ being in the position of $IJ$ \emph{within} $O$}%
+    %\label{fig:superposition}
+%\end{figure}
+
+The superposition grid $S$ consists can also be visualized as a 4-dimensional matrix with elements representing the weights within all possible \emph{token positions} within $O$ (first 2 dimensions) of all possible \emph{token values} (next 2 dimensions). Using the matrix flattening scheme from \autoref{eq:flattening_scheme}, a 2-dimensional representation is possible. The representations are identical to \autoref{fig:comparisonGrids} (but without shaded cells), and in contrast to \autoref{fig:comparisonGrids}, the elements of the grid \emph{do not represent distances}, but rather, the element $S_{i,j,k,l}$ or $S_{m,n}$ represent the weight of the fragment within position $\bm{IJ}$ of token $\bm{KL}$.
 
 \begin{figure}[htpb]
     \centering
     \begin{subfigure}[t]{0.5\textwidth}
     \begin{center}
-    \nestedToroid*{2}
+\drawGrid{2}{{AA,AB,BB,BA}}
     \end{center}
-    \caption{$S_{i,j,k,l}$, a 4-dimensional superposition}
+    \caption{An example toroidal grid $X$}
     \end{subfigure}%
     ~
     \begin{subfigure}[t]{0.5\textwidth}
     \begin{center}
-    \twodcomparison*{2}
+\superposition{2}{AA,AB,BB,BA}
     \end{center}
-    \caption{$S_{m,n}$ a 2-dimensional superposition}
-    \end{subfigure}
-
-    \caption{Grids $S$ representing superpositions of an $N=2$ toroidal grid, where every element represents the probability of the token $KL$ being in the of position $IJ$ in $O$}%
-    \label{fig:superposition}
-\end{figure}
-
-The superposition grid $S$ consists of the weights of all the fragments of all the tokens. Again, this can be visualized as a 4-dimensional matrix, with the first 2 dimensions representing token positions (within $O$) and the next 2 dimensions representing the tokens. Using the indices conversions from \ref{ssub:token_comparisons} a 2-dimensional representation of this matrix is possible. Both are shown in \autoref{fig:superposition}. Note that, in contrast to \autoref{fig:comparisonGrids}, the elements of the grid \emph{do not represent distances}, but rather, the element $S_{i,j,k,l}$ or $S_{m,n}$ represents the weight of the fragment of token $\bm{KL}$ within position $\bm{IJ}$. Let $S$ denote the 2-dimensional representation. Note, within $S$ rows represent the positions within $O$, and columns represent the token values. An example of superposition for a discrete toroidal grid is shown in \autoref{fig:superpositionExample}.
-
-Further constraints to enforce the concept of weights will be discussed in \ref{sub:constraints}.
-
-By doing so, the limitations associated with a discrete grid are sidestepped. Now, all token values are associated with all of positions, with continuous\footnote{as in non-discrete} weights. Therefore, we can differentiate the loss function \wrt{} the weights, \emph{instead of optimizing $X$, we optimize its continuous representation, $S$.} Note that with a discrete superposition grid (entries containing only 0s and 1s), the loss function is equivalent to that in \ref{ssub:loss_function_as_matrix_multiplications}.
-
-\begin{figure}[htpb]
-    \centering
-    \begin{subfigure}[t]{0.5\textwidth}
-    \begin{center}
-\drawGrid{2}{{BB,AB,BA,AA}}
-    \end{center}
-    \caption{$X$, an example toroidal grid}
-    \end{subfigure}%
-    ~
-    \begin{subfigure}[t]{0.5\textwidth}
-    \begin{center}
-\superposition{2}{BB,AB,BA,AA}
-    \end{center}
-    \caption{$S_{m,n}$ superposition of the grid on the left}
+    \caption{$S_{m,n}$}
     \label{fig:superpositionShade}
     \end{subfigure}
 
-    \caption{Shaded cells have weight 1, non-shaded cells have weight 0}
+    \caption{Superposition of a toroidal grid. Shaded cells have weight 1, non-shaded cells have weight 0.}
     \label{fig:superpositionExample}
 \end{figure}
 
-\subsubsection{Generalization of the Loss Function}%
-\label{ssub:generalization_of_the_loss_function}
+Let $S$ denote the 2-dimensional representation. Note, within $S$, rows represent the possible positions within $O$ and columns represent the token values. An example of superposition for a discrete toroidal grid is shown in \autoref{fig:superpositionExample}.
 
-Defining the loss function for this formulation requires us to measure distance between \emph{every} token value within \emph{every} position (ie. all fragments), to \emph{every other}\footnote{Ensuring unique \emph{token value} comparisons} token value within \emph{every} position, scaled by the weights the fragments. That is, for token value $b$ in position $a$, compared to the token value $d$ in position $c$, the distance\footnote{squared toroidal distance in $X$ multiplied by squared toroidal distance in $O$} should be scaled by $S_{a,b}S_{c,d}$, because the weights within $S$ reflect the extent a fragment should affect the loss.
+By doing so, the limitations associated with a discrete grid are sidestepped. All token values are associated with all positions, with continuous (real-valued) fragment weights. Therefore, the loss function can be differentiated \wrt{} the weights --- \emph{instead of optimizing $X$, we optimize its continuous representation, $S$.} Note that with a superposition grid with entries derived from a toroidal grid, the loss function will simplify into that in \ref{sub:loss_function_as_matrix_multiplications} as demonstrated within the next section.
 
-The distance between these two fragments is defined as $C(O)_{a,c}$, because $a$ and $c$ correspond to token position, whereas $C(O)_{b,d}$ represents the distance between the 2 tokens within $O$, since within $O$, the token values are equal to the token positions (\ref{sub:toroidal_grid}).
+\subsection{Generalization of the Loss Function}%
+\label{sub:generalization_of_the_loss_function}
+Defining the loss function for this formulation requires measuring the distance between \emph{every} token value within \emph{every} position (i.e., all fragments), to \emph{every other} token value (ensuring unique \emph{value} comparisons) within \emph{every} position, scaled by the weights of the fragments. That is, for token value $b$ in position $a$, compared to the token value $d$ in position $c$, the product of distances (in $O$ and $X$) should be scaled by $S_{a,b}S_{c,d}$, because the weights within $S$ reflect the extent to which a fragment should affect the loss (e.g., half a token should impact the loss half as much).
 
-Alike with \ref{ssub:token_comparisons}, duplicate evaluations between values (not positions) must be prevented, for example: each of %
+The distance between these two fragments in $X$ is defined as $C(O)_{a,c}$, because $a$ and $c$ correspond to token position, whereas $C(O)_{b,d}$ represents the distance between the 2 tokens within $O$, since within $O$, the token values are equal to the token positions (\autoref{sub:toroidal_grid}).
+
+Alike with \autoref{sub:token_comparisons}, duplicate evaluations between values (not positions) must be prevented, for example: each of %
 [$\begin{smallmatrix}AA\\AA\end{smallmatrix}$,%
 $\begin{smallmatrix}AB\\AA\end{smallmatrix}$,%
 $\begin{smallmatrix}BA\\AA\end{smallmatrix}$,%
@@ -68,20 +71,66 @@ $\begin{smallmatrix}BA\\AB\end{smallmatrix}$,%
 $\begin{smallmatrix}BB\\AB\end{smallmatrix}$] (token value $AB$), but not vice versa, because the value comparisons have already been made.
 
 Therefore, the loss function can be written as
-\begin{equation}
+\begin{align}
     L(S)=\frac{1}{2}\sum_{a}^{N^2} \sum_{b}^{N^2} \sum_{c}^{N^2} \sum_{d}^{N^2} S_{a,b} S_{c,d} C(O)_{a,c}C(O)_{b,d}-c
-\end{equation}
-Similar to \ref{ssub:loss_function_as_matrix_multiplications}, we can simply divide the loss by 2, because diagonal value evaluations: where $b=d$, are equal to $0$, due to $C(O)_{b,d}$, the distance of a token against itself.
+    \label{eq:final_loss}
+\end{align}
+Similar to \autoref{sub:loss_function_as_matrix_multiplications}, we can simply divide the loss by 2, because duplicate value comparisons are only made when the values of $b$ and $d$ are swapped ($C(O)_{b,d}$ remains the same), and because $C(O)$ is zero-valued along the diagonal, where $b=d$, due to the inclusion of $C(O)_{b,d}$, the distance of a token against itself.
 
 In summary,
 \begin{itemize}
-    \item [$\sum_{a}^{N^2}$] represents an iteration over source position
-    \item [$\sum_{b}^{N^2}$] represents an iteration over source value
-    \item [$\sum_{c}^{N^2}$] represents an iteration over target position
-    \item [$\sum_{d}^{N^2}$] represents an iteration over target values
-    \item [$S_{a,b}$] represents the weight of fragment $\bm{AB}$
-    \item [$S_{c,d}$] represents the weight of fragment $\bm{CD}$
-    \item [$C(O)_{a,c}$] represents the distance between source and target positions
-    \item [$C(O)_{b,d}$] represents the distance between source and target values within $O$
-    \item [$c$] is the lower bound constant
+    \item [$\sum_{a}^{N^2}$] represents an iteration over source position,
+    \item [$\sum_{b}^{N^2}$] represents an iteration over source value,
+    \item [$\sum_{c}^{N^2}$] represents an iteration over target position,
+    \item [$\sum_{d}^{N^2}$] represents an iteration over target values,
+    \item [$S_{a,b}$] represents the weight of fragment in position $\bm{A}$ of value $\bm{B}$,\footnote{\label{ft:unravel}expand it by undoing the matrix flattening scheme in \autoref{eq:flattening_scheme}}
+    \item [$S_{c,d}$] represents the weight of fragment in position $\bm{C}$ of value $\bm{D}$,\footnote{see footnote \autoref{ft:unravel}}
+    \item [$C(O)_{a,c}$] represents the distance between source and target positions,
+    \item [$C(O)_{b,d}$] represents the distance between source and target values within $O$,
+    \item [$c$] is the lower bound constant (\autoref{sec:lower_bound_constants})
 \end{itemize}
+
+In order to calculate the loss of \autoref{fig:superpositionShade} exhaustively with \autoref{eq:final_loss}, $(N^2)^4$ iterations, or 256 iterations for $N=2$, are required to go over the all the possible combinations of $a,b,c,d$. For brevity, only non-zero configurations of $a,b,c,d$ (i.e., only if source and target weights are non-zero) are shown. Note that $C(O)$ is taken from \autoref{fig:c_o}.
+\begingroup
+\renewcommand{\arraystretch}{0.7}
+\begin{table}[htpb]
+    \centering
+    \begin{tabular}{c|c|c|c||c|c|c|c|c|c}
+        %$a$&$b$&$c$&$d$&$S_{a,b}$&$S_{c,d}$&$C(O)_{a,c}$&$C(O)_{b,d}$&Product\\\hline
+        $a$&$b$&$c$&$d$&
+        \multicolumn{1}{c!{\makebox[0pt]{$\times$}}}{$S_{a,b}$}&
+        \multicolumn{1}{c!{\makebox[0pt]{$\times$}}}{$S_{c,d}$}&
+        \multicolumn{1}{c!{\makebox[0pt]{$\times$}}}{$C(O)_{a,c}$}&
+        \multicolumn{1}{c!{\makebox[0pt]{$=$}}}{$C(O)_{b,d}$}&
+                                                              Product\\\hline
+
+        1&1&1&1&1&1&0&0&0\\
+        1&1&2&2&1&1&1&1&1\\
+        1&1&3&4&1&1&1&2&2\\
+        1&1&4&3&1&1&2&1&2\\
+        2&2&1&1&1&1&1&1&1\\
+        2&2&2&2&1&1&0&0&0\\
+        2&2&3&4&1&1&2&1&2\\
+        2&2&4&3&1&1&1&2&2\\
+        3&4&1&1&1&1&1&2&2\\
+        3&4&2&2&1&1&2&1&2\\
+        3&4&3&4&1&1&0&0&0\\
+        3&4&4&3&1&1&1&1&1\\
+        4&3&1&1&1&1&2&1&2\\
+        4&3&2&2&1&1&1&2&2\\
+        4&3&3&4&1&1&1&1&1\\
+        4&3&4&3&1&1&0&0&0\\\hline
+        \multicolumn{8}{r|}{Sum}&20
+
+    \end{tabular}
+    \caption{Superposition loss of \autoref{fig:superpositionShade}}
+    \label{tab:superposition_example}
+\end{table}
+\endgroup
+
+Therefore, the loss is equal to
+\begin{align}
+    L(S)&=\frac{1}{2}\cdot 20-c\nonumber\\
+        &=10-c
+\end{align}
+This is equivalent to the loss obtained in \autoref{eq:discrete_example}. Obviously, this loss function can accomodate non-discrete weights within the superposition grid. This example is purposefully simplistic.
